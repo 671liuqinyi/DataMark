@@ -1,0 +1,63 @@
+// 左侧：图片展示区
+.left-container {
+  overflow-y: auto;
+  height: calc(100vh - 33px);
+  width: 100%;
+  background-color: #262c2f;
+  color: #fff;
+
+  .pic-item {
+    display: inline-block;
+    width: 150px;
+    height: 150px;
+    border: solid 1px #171717;
+    padding: 35px 22.5px;
+    cursor: pointer;
+
+    img {
+      width: 105px;
+      height: 70px;
+    }
+
+    &:hover .plain-img {
+      transform: translate(-4px, 4px);
+      box-shadow: 4px -4px #4c4c4c;
+      transition: all 0.3s ease-in-out;
+    }
+
+    &:not(:hover) .plain-img {
+      transform: none;
+      box-shadow: none;
+      transition: all 0.3s ease-in-out;
+    }
+
+    // 被选中的图片阴影颜色
+    & .selected-img {
+      transform: translate(-4px, 4px);
+      box-shadow: 4px -4px #009efd !important;
+      transition: all 0.3s ease-in-out;
+    }
+
+    // 标注图片序号
+    .sequence-number {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+  }
+
+
+
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    width: 8px;
+    /* 设置滚动条的宽度 */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #1e2326;
+    /* 设置滚动条拖动块的颜色 */
+    border-radius: 1rem;
+    /* 设置圆角边框半径 */
+  }
+}

@@ -1,0 +1,73 @@
+.editor {
+  width: 100%;
+  height: calc(100vh - 33px);
+
+  .banner {
+    display: flex;
+    height: 40px;
+    line-height: 40px;
+    background-color: #262c2f;
+    padding: 5px;
+
+    .menu-button {
+      display: flex;
+      width: 30px;
+      height: 30px;
+      margin-right: 5px;
+      cursor: pointer;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        width: 20px;
+        height: 20px;
+        filter: brightness(0) invert(1);
+      }
+
+      &:hover {
+        background-color: #1e2326;
+      }
+    }
+  }
+
+  .content {
+    height: calc(100vh - 33px - 40px - 40px);
+    line-height: 16px;
+  }
+
+  .footer {
+    display: flex;
+    height: 40px;
+    line-height: 40px;
+    background-color: #282828;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+
+    .cur-img-name {
+      height: 40px;
+      width: 200px;
+    }
+
+    .left-arrow,
+    .right-arrow {
+      height: 40px;
+      width: 40px;
+
+      img {
+        width: 15px;
+        height: 15px;
+        filter: brightness(0) invert(1);
+      }
+
+      &:hover img {
+        cursor: pointer;
+      }
+    }
+
+    // 灰色箭头样式
+    .grey-arrow {
+      filter: invert(1) opacity(25%);
+    }
+  }
+}

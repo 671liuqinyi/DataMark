@@ -1,0 +1,23 @@
+.container {
+  width: 60vw;
+  height: 60vh;
+  margin: 200px auto 0;
+
+  .canvas {
+    width: 60vw;
+    height: 55vh;
+    border: 1px solid #ccc;
+  }
+
+  .button {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+
+    .left,
+    .right {
+      height: 40px;
+      width: 200px;
+    }
+  }
+}

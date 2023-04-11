@@ -17,4 +17,55 @@
 
   // 标注框列表
   .label-type-list {}
+
+  // 标注框列表项
+  .label-box {
+    display: flex;
+    width: 280px;
+    height: 40px;
+    background-color: #202020;
+    color: #fff;
+    align-items: center;
+
+    .color-select {
+      margin-left: 7px;
+      width: 26px;
+      height: 26px;
+    }
+
+    .label-select {
+      width: 200px;
+      height: 40px;
+      line-height: 40px;
+      cursor: pointer;
+    }
+
+    .delete-icon {
+      display: flex;
+      width: 40px;
+      height: 40px;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        width: 18px;
+        height: 18px;
+        filter: brightness(0) invert(1);
+      }
+
+      img:hover {
+        cursor: pointer;
+        // filter: hue-rotate(70deg);
+      }
+    }
+  }
+
+  // 清除列表项的padding,调整间距
+  .ant-list-item {
+    padding: 0;
+
+    &:nth-child(n+2) {
+      margin-top: 3px;
+    }
+  }
 }

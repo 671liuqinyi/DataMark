@@ -1,12 +1,283 @@
-import React from "react"
+import React, { useRef, useState, useEffect } from "react"
 import LeftArrow from "../../assets/left.png"
 import RightArrow from "../../assets/right.png"
 import ZoomIn from "../../assets/zoom-in.png"
 import ZoomOut from "../../assets/zoom-out.png"
-import { Tooltip } from "antd"
+import { Tooltip, message } from "antd"
 
 import "./index.scss"
 export default function Editor(props) {
+  const { imgList, selected, setSelected, rectArray, setRectArray } = props
+  const imageObj = imgList[selected]
+
+  // canvas元素
+  const canvasRef = useRef()
+  // 背景图片(清除框后再填充回来，防止画框时背景消失)
+  const backgroundRef = useRef()
+  const [ctx, setCtx] = useState()
+
+  useEffect(() => {
+    // 初始化canvas上下文
+    const context = canvasRef.current.getContext("2d", {
+      // 在设置 willReadFrequently 的情况下读取像素数据(优化getImageData函数)
+      willReadFrequently: true,
+    })
+    setCtx(context)
+    // 注册键盘事件
+    // document.addEventListener("keydown", handleKeyEvent)
+    return () => {
+      // document.removeEventListener("keydown", handleKeyEvent)
+    }
+  }, [])
+
+  useEffect(() => {
+    canvasRef.current.onmousedown = handleMousedown
+    canvasRef.current.onmousemove = handleMousemove
+    canvasRef.current.onmouseup = handleMouseup
+    return () => {
+      canvasRef.current.onmousedown = null
+      canvasRef.current.onmousemove = null
+      canvasRef.current.onmouseup = null
+    }
+  }, [ctx, rectArray, selected])
+
+  // ******************* 画图相关start ********************/
+  function Rect(startX, startY, endX, endY, color) {
+    this.startX = startX
+    this.startY = startY
+    this.endX = endX
+    this.endY = endY
+    this.color = color
+    this.isSelected = false
+  }
+
+  let rectList = useRef([])
+  let undoArray = []
+  let redoArray = []
+
+  let startX
+  let startY
+  let endX
+  let endY
+
+  let width = 0
+  let height = 0
+
+  let isDrawing = false
+  let isDragging = false
+
+  let currentRect
+
+  const colors = [
+    "red",
+    "green",
+    "blue",
+    "yellow",
+    "magenta",
+    "orange",
+    "brown",
+    "purple",
+    "pink",
+  ]
+  let color
+
+  function handleMousedown(e) {
+    // 未导入图片时不能标注
+    if (selected === -1) return
+    startX = e.offsetX
+    startY = e.offsetY
+    const rectIndex = rectList.current.findIndex((item) => {
+      if (item.startX < item.endX) {
+        if (item.startY < item.endY) {
+          return (
+            startX > item.startX &&
+            startX < item.endX &&
+            startY > item.startY &&
+            startY < item.endY
+          )
+        } else {
+          return (
+            startX > item.startX &&
+            startX < item.endX &&
+            startY > item.endY &&
+            startY < item.startY
+          )
+        }
+      } else {
+        if (item.startY < item.endY) {
+          return (
+            startX > item.endY &&
+            startX < item.startY &&
+            startY > item.startY &&
+            startY < item.endY
+          )
+        } else {
+          return (
+            startX > item.startX &&
+            startX < item.endX &&
+            startY > item.endY &&
+            startY < item.startY
+          )
+        }
+      }
+    })
+    // rectIndex不为-1，代表当前是拖拽状态
+    if (rectIndex !== -1) {
+      currentRect = rectList.current[rectIndex]
+      isDragging = true
+      currentRect.isSelected = true
+      undoArray.pop()
+      const tempRectList = rectList.current.slice()
+      const tempCurrentRect = Object.assign({}, currentRect)
+      tempRectList.splice(rectIndex, 1, tempCurrentRect)
+      undoArray.push(tempRectList)
+    } else {
+      // 绘制状态
+      isDrawing = true
+    }
+    color = colors[randomFromTo(0, 8)]
+  }
+
+  function handleMousemove(e) {
+    endX = e.offsetX
+    endY = e.offsetY
+    if (isDrawing) {
+      drawRects()
+      // 绘制新矩形框
+      ctx.beginPath()
+      ctx.moveTo(startX, startY)
+      ctx.lineTo(endX, startY)
+      ctx.lineTo(endX, endY)
+      ctx.lineTo(startX, endY)
+      ctx.lineTo(startX, startY)
+      ctx.strokeStyle = color
+      ctx.lineWidth = 3
+      ctx.stroke()
+    } else if (isDragging) {
+      const w = Math.abs(startX - endX)
+      const h = Math.abs(startY - endY)
+      if (endX < startX) {
+        startX -= w
+        endX -= w
+        currentRect.startX -= w
+        currentRect.endX -= w
+      }
+      if (endX >= startX) {
+        startX += w
+        endX += w
+        currentRect.startX += w
+        currentRect.endX += w
+      }
+      if (endY < startY) {
+        startY -= h
+        endY -= h
+        currentRect.startY -= h
+        currentRect.endY -= h
+      }
+      if (endY >= startY) {
+        startY += h
+        endY += h
+        currentRect.startY += h
+        currentRect.endY += h
+      }
+      drawRects()
+    }
+  }
+
+  function handleMouseup(e) {
+    if (isDrawing) {
+      rectList.current.unshift(new Rect(startX, startY, endX, endY, color))
+      setRectArray([...rectList.current])
+    }
+    if (isDragging) {
+      rectList.current.forEach((item) => {
+        item.isSelected = false
+      })
+    }
+    undoArray.push(rectList.current.slice())
+    redoArray = []
+    isDrawing = false
+    isDragging = false
+  }
+  // 绘制所有已有矩形框
+  function drawRects() {
+    // 清除所有矩形
+    clearCanvas()
+    // 将列表保存的矩形画上去
+    for (let i = 0; i < rectList.current.length; i++) {
+      let rect = rectList.current[i]
+      ctx.beginPath()
+      ctx.moveTo(rect.startX, rect.startY)
+      ctx.lineTo(rect.endX, rect.startY)
+      ctx.lineTo(rect.endX, rect.endY)
+      ctx.lineTo(rect.startX, rect.endY)
+      ctx.lineTo(rect.startX, rect.startY)
+      ctx.strokeStyle = rect.color
+      ctx.lineWidth = 3
+      // 高亮选中矩形
+      if (rect.isSelected) {
+        ctx.globalAlpha = 0.3
+        ctx.fillStyle = rect.color
+        ctx.fill()
+      }
+      ctx.globalAlpha = 1
+
+      ctx.stroke()
+    }
+  }
+
+  //在某个范围内生成随机数
+  function randomFromTo(from, to) {
+    return Math.floor(Math.random() * (to - from + 1) + from)
+  }
+
+  // 删除所有矩形框，清空画布
+  function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // 清除完之后把背景图片放回去
+    ctx.putImageData(backgroundRef.current, 0, 0)
+  }
+
+  // **************** 画图相关end ********************/
+
+  // 根据当前选中的url展示不同的图片
+  const showImage = (url) => {
+    // 初始化时不生成图片
+    if (!url) return
+    // 生成图片
+    const image = new Image()
+    image.src = url
+    image.onload = () => {
+      ctx.drawImage(
+        image,
+        0,
+        0,
+        Math.floor(canvasRef.current.width),
+        Math.floor(canvasRef.current.height)
+      )
+      backgroundRef.current = ctx.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      )
+    }
+  }
+  showImage(imageObj?.url)
+  // 切换图片
+  const go = (type) => () => {
+    if (selected === -1) {
+      message.warning("您还没有导入图片！")
+      return
+    }
+    if (type === "prev") {
+      const prevIndex = selected === 0 ? imgList.length - 1 : selected - 1
+      setSelected(prevIndex)
+    } else if (type === "next") {
+      const nextIndex = selected === imgList.length - 1 ? 0 : selected + 1
+      setSelected(nextIndex)
+    }
+  }
   return (
     <div className="editor">
       {/* 菜单 */}
@@ -24,22 +295,37 @@ export default function Editor(props) {
       </div>
       {/* 画布 */}
       <div className="content">
-        {/* todo:嵌入canvas */}
-        <canvas>todo</canvas>
+        <canvas
+          id="canvas"
+          width={Math.floor(document.documentElement.clientWidth - 308 - 308)}
+          height={Math.floor(
+            document.documentElement.clientHeight - 33 - 40 - 40
+          )}
+          ref={canvasRef}
+        >
+          Sorry, your browser does not support HTML5 Canvas functionality which
+          is required for this application.
+        </canvas>
       </div>
       {/* 底部 */}
       <div className="footer">
-        <div className="left-arrow">
+        <div
+          className={`left-arrow ${selected === -1 ? "grey-arrow" : ""}`}
+          onClick={go("prev")}
+        >
           <Tooltip title={"上一张"}>
             <img src={LeftArrow} alt="previous" />
           </Tooltip>
         </div>
         <div className="cur-img-name ellipsis">
-          <Tooltip title={"picnameaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}>
-            picnameaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          <Tooltip title={imageObj?.name ?? "-"}>
+            {imageObj?.name ?? "-"}
           </Tooltip>
         </div>
-        <div className="right-arrow">
+        <div
+          className={`right-arrow ${selected === -1 ? "grey-arrow" : ""}`}
+          onClick={go("next")}
+        >
           <Tooltip title={"下一张"}>
             <img src={RightArrow} alt="next" />
           </Tooltip>

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { Layout, Space } from "antd"
-import Selector from "../../components/Selector"
+import Menu from "../../components/Menu"
 import ImgList from "../../components/ImgLIst"
 import Editor from "../../components/Editor"
 import LabelTypeLIst from "../../components/LabelTypeLIst"
+
 import "./index.scss"
 
 const { Header, Footer, Sider, Content } = Layout
@@ -29,64 +30,7 @@ const Dashboard = () => {
   // 项目名称
   const [projName, setProjName] = useState("xxx")
   // 标注图片列表
-  const [imgList, setImgList] = useState([
-    {
-      id: 1,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/162ab10d004d48d08cc678617a43f942~tplv-k3u1fbpfcp-zoom-crop-mark:1512:1512:1512:851.awebp?",
-    },
-    {
-      id: 2,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 3,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 4,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/162ab10d004d48d08cc678617a43f942~tplv-k3u1fbpfcp-zoom-crop-mark:1512:1512:1512:851.awebp?",
-    },
-    {
-      id: 5,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 6,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 7,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/162ab10d004d48d08cc678617a43f942~tplv-k3u1fbpfcp-zoom-crop-mark:1512:1512:1512:851.awebp?",
-    },
-    {
-      id: 8,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 9,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 10,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 11,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 12,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/162ab10d004d48d08cc678617a43f942~tplv-k3u1fbpfcp-zoom-crop-mark:1512:1512:1512:851.awebp?",
-    },
-    {
-      id: 13,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-    {
-      id: 14,
-      url: "https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2805d6ba9c4e4ae09f397846093c1988~tplv-k3u1fbpfcp-no-mark:480:400:0:0.awebp?",
-    },
-  ])
+  const [imgList, setImgList] = useState([])
   // 被选中的图片
   const [selected, setSelected] = useState(-1)
   // 选中标注类型,默认画矩形框
@@ -97,6 +41,34 @@ const Dashboard = () => {
     polygon: [],
     point: [],
     line: [],
+  })
+  // 标注框label数组
+  const [labelArr, setLabelArr] = useState([])
+  // 编辑标签框是否显示
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  // 标记框数组
+  const [rectArray, setRectArray] = useState([])
+  // 导出全局json配置
+  const [globalData, setGlobalData] = useState({
+    settings: {},
+    img_annotations: {},
+    img_attributes: {
+      region: {
+        type: {
+          type: "radio",
+          description: "",
+          options: {
+            head_overwater: "",
+            head_underwater: "",
+            body_overwater: "",
+            body_underwater: "",
+          },
+          default_options: {},
+        },
+      },
+    },
+    img_id_list: [],
+    version: "1.0",
   })
   // 修改被选中的图片
   const changeSelectedImg = useCallback((id) => {
@@ -116,12 +88,20 @@ const Dashboard = () => {
       size={[0, 48]}
     >
       <Layout>
-
         <Header style={headerStyle}>
           <div className="header-container">
-            <div className="logo">logo</div>
+            <div className="logo">DataMark</div>
             <div className="menu">
-              <Selector />
+              <Menu
+                globalData={globalData}
+                labelArr={labelArr}
+                isModalOpen={isModalOpen}
+                setIsModalOpen={setIsModalOpen}
+                setSelected={setSelected}
+                setImgList={setImgList}
+                setGlobalData={setGlobalData}
+                setLabelArr={setLabelArr}
+              />
             </div>
             <div className="proj-name">项目名称: {projName}</div>
             <div className="user">user</div>
@@ -138,14 +118,23 @@ const Dashboard = () => {
           </Sider>
           {/* 标注区 */}
           <Content style={contentStyle}>
-            <Editor />
+            <Editor
+              imgList={imgList}
+              selected={selected}
+              rectArray={rectArray}
+              setSelected={setSelected}
+              setRectArray={setRectArray}
+            />
           </Content>
           {/* 右侧标注框列表 */}
           <Sider width={siderWidth}>
             <LabelTypeLIst
               labelObj={labelObj}
               labelType={labelType}
+              labelArr={labelArr}
+              rectArray={rectArray}
               changeLabelType={changeLabelType}
+              setIsModalOpen={setIsModalOpen}
             />
           </Sider>
         </Layout>

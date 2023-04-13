@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Layout, Space } from "antd"
 import { COLORS } from "../../utils/constant"
 import Menu from "../../components/Menu"
@@ -59,29 +59,21 @@ const Dashboard = () => {
 
   // 导出全局json配置
   const [globalData, setGlobalData] = useState({
-    settings: {},
-    img_annotations: {},
-    img_attributes: {
-      region: {
-        type: {
-          type: "radio",
-          description: "",
-          options: {
-            head_overwater: "",
-            head_underwater: "",
-            body_overwater: "",
-            body_underwater: "",
-          },
-          default_options: {},
-        },
-      },
+    settings: {
+      projName,
     },
+    // 标注框具体信息
+    img_annotations: {},
+    // 标注框类型信息
+    img_attributes: {},
     img_id_list: [],
     version: "1.0",
   })
 
   // 同步两个标注框
   const [syncLabel, setSyncLabel] = useState(0)
+  // 图片缩放比例数组
+  const scaleArr = useRef([])
 
   // 修改被选中的图片
   const changeSelectedImg = useCallback((id) => {
@@ -109,6 +101,8 @@ const Dashboard = () => {
                 globalData={globalData}
                 labelArr={labelArr}
                 isModalOpen={isModalOpen}
+                scaleArr={scaleArr}
+                imgList={imgList}
                 setIsModalOpen={setIsModalOpen}
                 setSelected={setSelected}
                 setImgList={setImgList}
@@ -137,6 +131,7 @@ const Dashboard = () => {
               labelType={labelType}
               syncLabel={syncLabel}
               labelToColor={labelToColor}
+              scaleArr={scaleArr}
               setSelected={setSelected}
               setImgList={setImgList}
               setSyncLabel={setSyncLabel}

@@ -18,25 +18,25 @@ const items = [
       },
       {
         key: "1-2",
-        label: "标签管理",
+        label: "导入模型",
       },
     ],
   },
-  // {
-  //   key: "2",
-  //   type: "group",
-  //   label: "编辑",
-  //   children: [
-  //     {
-  //       key: "2-1",
-  //       label: "编辑标签",
-  //     },
-  //     {
-  //       key: "2-2",
-  //       label: "其他格式",
-  //     },
-  //   ],
-  // },
+  {
+    key: "2",
+    type: "group",
+    label: "管理",
+    children: [
+      {
+        key: "2-1",
+        label: "标签管理",
+      },
+      // {
+      //   key: "2-2",
+      //   label: "其他格式",
+      // },
+    ],
+  },
   {
     key: "3",
     type: "group",
@@ -48,7 +48,7 @@ const items = [
       },
       {
         key: "3-2",
-        label: "其他格式",
+        label: "标注数据保存",
       },
     ],
   },
@@ -58,6 +58,8 @@ const Menu = (props) => {
     isModalOpen,
     globalData,
     labelArr,
+    scaleArr,
+    imgList,
     setIsModalOpen,
     setSelected,
     setImgList,
@@ -90,10 +92,10 @@ const Menu = (props) => {
           },
         }
       })
-      // console.log(`imgList`, imgList)
+      console.log(`imgList`, imgList)
 
       setImgList(imgList)
-      // console.log(`files`, files)
+
       // 收集图像名称列表，用于导出json
       const img_id_list = files.map((file) => file.name)
       setGlobalData((prevValue) => ({ ...prevValue, img_id_list }))
@@ -102,10 +104,37 @@ const Menu = (props) => {
     }
   }
 
-  // 保存参数
+  // 导出下载数据
   const download = () => {
+    // console.log(`scaleArr`, scaleArr.current)
+    const img_annotations = {}
+    imgList.forEach((img, index) => {
+      let temp = {}
+      temp.filename = img.name
+      temp.regions = img.labelObj["rect"].map((rect) => {
+        return {
+          shape_attributes: {
+            name: "rect",
+            x: Math.round(rect.startX * scaleArr.current[index].x),
+            y: Math.round(rect.startY * scaleArr.current[index].y),
+            width: Math.round(
+              (rect.endX - rect.startX) * scaleArr.current[index].x
+            ),
+            height: Math.round(
+              (rect.endY - rect.startY) * scaleArr.current[index].y
+            ),
+          },
+          region_attributes: {
+            type: rect.label,
+          },
+        }
+      })
+      img_annotations[img.name] = temp
+    })
+    console.log(`img_annotations`, img_annotations)
+    // return
     // 生成要下载的 JSON 数据
-    const jsonData = JSON.stringify(globalData)
+    const jsonData = JSON.stringify(img_annotations)
 
     // 创建 Blob 对象，并指定 MIME 类型为 application/json
     const blob = new Blob([jsonData], { type: "application/json" })
@@ -125,6 +154,9 @@ const Menu = (props) => {
     // 清理对象 URL
     URL.revokeObjectURL(url)
   }
+
+  // 保存数据
+  const save = () => {}
   // 处理菜单点击事件
   const onClick = ({ key }) => {
     // key的含义见items配置
@@ -134,7 +166,7 @@ const Menu = (props) => {
         loadImages()
         break
       // 编辑标签
-      case "1-2":
+      case "2-1":
         setIsModalOpen(true)
         break
       // 导出json格式

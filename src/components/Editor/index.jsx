@@ -16,6 +16,7 @@ export default function Editor(props) {
     labelType,
     syncLabel,
     labelToColor,
+    scaleArr,
     setSelected,
     setImgList,
     setSyncLabel,
@@ -271,6 +272,13 @@ export default function Editor(props) {
     const image = new Image()
     image.src = url
     image.onload = () => {
+      // console.log(`img-width-height`, image.width, image.height)
+      const scale = {
+        x: image.width / canvasRef.current.width,
+        y: image.height / canvasRef.current.height,
+      }
+      // 更新数组
+      scaleArr.current[selected] = scale
       ctx.drawImage(
         image,
         0,

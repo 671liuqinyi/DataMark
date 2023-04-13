@@ -5,6 +5,7 @@ import { useState, useRef } from "react"
 import { MenuOutlined } from "@ant-design/icons"
 import { Dropdown, Space, message } from "antd"
 import EditLabel from "../EditLabel"
+import { formatDate } from "../../utils"
 
 const items = [
   {
@@ -60,6 +61,7 @@ const Menu = (props) => {
     labelArr,
     scaleArr,
     imgList,
+    projName,
     setIsModalOpen,
     setSelected,
     setImgList,
@@ -145,7 +147,10 @@ const Menu = (props) => {
     // 创建一个链接元素并设置其属性
     const link = document.createElement("a")
     link.setAttribute("href", url)
-    link.setAttribute("download", `测试-${globalData.version}.json`)
+    link.setAttribute(
+      "download",
+      `${projName}-v${globalData.version}-${formatDate(Date.now())}.json`
+    )
 
     // 将链接元素添加到文档中，并模拟点击它以触发下载
     document.body.appendChild(link)

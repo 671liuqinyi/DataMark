@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Layout, Space } from "antd"
+import { Layout, Space, Input } from "antd"
 import { COLORS } from "../../utils/constant"
 import Menu from "../../components/Menu"
 import ImgList from "../../components/ImgLIst"
@@ -30,19 +30,19 @@ const siderWidth = 308
 const Dashboard = () => {
   // 项目名称
   const [projName, setProjName] = useState("xxx")
+  // 项目名称输入框
+  const [inputValue, setInputValue] = useState("")
+  // 控制项目名称输入框是否可见
+  const [inputVisible, setInputVisible] = useState(false)
+  // 项目名称input框ref
+  const inputRef = useRef()
+
   // 标注图片列表
   const [imgList, setImgList] = useState([])
   // 被选中的图片
   const [selected, setSelected] = useState(-1)
   // 选中标注类型,默认画矩形框
   const [labelType, setLabelType] = useState("rect")
-  // 标注框数组
-  // const [labelObj, setLabelObj] = useState({
-  //   rect: [],
-  //   polygon: [],
-  //   point: [],
-  //   line: [],
-  // })
   // 标注框label数组
   const [labelArr, setLabelArr] = useState([])
   // 标签和颜色对应关系
@@ -84,6 +84,21 @@ const Dashboard = () => {
     setLabelType(type)
   }, [])
 
+  // 修改项目名称失去焦点
+  const handleInputConfirm = () => {
+    const value = inputValue.trim()
+    if (value !== "") {
+      setProjName(value)
+    }
+    setInputValue("")
+    setInputVisible(false)
+  }
+
+  // 保证第一时间选中input框
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [inputVisible])
+
   return (
     <Space
       direction="vertical"
@@ -103,6 +118,7 @@ const Dashboard = () => {
                 isModalOpen={isModalOpen}
                 scaleArr={scaleArr}
                 imgList={imgList}
+                projName={projName}
                 setIsModalOpen={setIsModalOpen}
                 setSelected={setSelected}
                 setImgList={setImgList}
@@ -110,7 +126,37 @@ const Dashboard = () => {
                 setLabelArr={setLabelArr}
               />
             </div>
-            <div className="proj-name">项目名称: {projName}</div>
+            <div className="proj-name">
+              <div
+                onClick={() => {
+                  setInputVisible(true)
+                }}
+              >
+                项目名称:{" "}
+                {inputVisible ? (
+                  <Input
+                    ref={inputRef}
+                    type="text"
+                    size="small"
+                    style={{ width: 78, verticalAlign: "center" }}
+                    value={inputValue}
+                    onChange={(e) => {
+                      setInputValue(e.target.value)
+                    }}
+                    onBlur={handleInputConfirm}
+                    onPressEnter={handleInputConfirm}
+                  />
+                ) : (
+                  // <div
+                  //   onClick={() => {
+                  //     setInputVisible(true)
+                  //   }}
+                  // >
+                  projName
+                  // {/* </div> */}
+                )}
+              </div>
+            </div>
             <div className="user">user</div>
           </div>
         </Header>

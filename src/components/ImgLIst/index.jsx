@@ -1,3 +1,6 @@
+/**
+ * 图片列表
+ */
 import React from "react"
 import "./index.scss"
 

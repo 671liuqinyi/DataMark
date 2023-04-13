@@ -1,113 +1,45 @@
-import { useState } from "react"
-import { Modal, Divider, Input, message, Table } from "antd"
-import AddIcon from "../../assets/plus.png"
+/**
+ * 标签管理界面
+ * 在页面中可以对标签类型进行管理
+ */
+import React from "react"
+import { Modal, Divider, Button } from "antd"
+import MyTag from "./MyTag"
 
 import "./index.scss"
 
-const columns = [
-  {
-    title: "标签名称",
-    dataIndex: "name",
-  },
-]
-
 const EditLabel = (props) => {
   const { isModalOpen, labelArr, setIsModalOpen, setLabelArr } = props
-  const [isSubModalOpen, setIsSubModalOpen] = useState(false)
-  const [value, setValue] = useState("")
-
-  // 表格数据
-  const tableData = labelArr.map((label, index) => {
-    return {
-      id: index,
-      name: label,
-      key: index,
-    }
-  })
 
   // 父modal处理函数
   const handleOk = () => {
     setIsModalOpen(false)
   }
 
-  const handleCancel = () => {
-    setIsModalOpen(false)
-  }
-  // 新增label
-  const addLabel = () => {
-    setIsSubModalOpen(true)
-  }
-
-  // 子modal处理函数
-  const handleSubModalOk = () => {
-    if (labelArr.includes(value)) {
-      message.info("该标签已存在！")
-      return
-    }
-    setLabelArr([...labelArr, value])
-    setIsSubModalOpen(false)
-    setValue("")
-  }
-  const handleSubModalCancel = () => {
-    setIsSubModalOpen(false)
-    setValue("")
-  }
   return (
     <>
       <Modal
         width={500}
         title="标签管理"
         open={isModalOpen}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        okText="确定"
-        cancelText="取消"
+        footer={[<Button onClick={handleOk}>关闭</Button>]}
         maskClosable={false}
+        onCancel={handleOk}
         centered
       >
         <div className="label-container">
-          <div>使用 + 按钮可以添加一个新的空文本字段作为标签。</div>
-          <Divider style={{ margin: "10px 0" }}></Divider>
-          <div className="icon" onClick={addLabel}>
-            <img src={AddIcon} alt="add" />
+          <div>
+            点击 <strong>+新增</strong> 按钮可以添加一个新的字段作为标签。
+            <br />
+            点击标签中的 <strong>X</strong> 号可以去除某个标签。
+            <br />
+            <strong>双击</strong> 标签可以修改标签内容
           </div>
-          <Divider style={{ margin: "10px 0" }} />
+          <Divider style={{ margin: "10px 0" }}></Divider>
           <div className="label-list">
-            {/* {labelArr.map((label, index) => {
-              return (
-                <div className="label-list-item" key={index}>
-                  {label}
-                </div>
-              )
-            })} */}
-            <Table
-              columns={columns}
-              dataSource={tableData}
-              pagination={false}
-              scroll={{ y: 200 }}
-            />
+            <MyTag labelArr={labelArr} setLabelArr={setLabelArr} />
           </div>
         </div>
-      </Modal>
-      <Modal
-        title="新增标签"
-        width={400}
-        open={isSubModalOpen}
-        onOk={handleSubModalOk}
-        onCancel={handleSubModalCancel}
-        okText="确定"
-        cancelText="取消"
-        maskClosable={false}
-        centered
-      >
-        <Input
-          placeholder="请输入标签名称"
-          // autoFocus
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value)
-          }}
-        />
       </Modal>
     </>
   )

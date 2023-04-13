@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Layout, Space } from "antd"
+import { COLORS } from "../../utils/constant"
 import Menu from "../../components/Menu"
 import ImgList from "../../components/ImgLIst"
 import Editor from "../../components/Editor"
@@ -36,18 +37,26 @@ const Dashboard = () => {
   // 选中标注类型,默认画矩形框
   const [labelType, setLabelType] = useState("rect")
   // 标注框数组
-  const [labelObj, setLabelObj] = useState({
-    rect: [],
-    polygon: [],
-    point: [],
-    line: [],
-  })
+  // const [labelObj, setLabelObj] = useState({
+  //   rect: [],
+  //   polygon: [],
+  //   point: [],
+  //   line: [],
+  // })
   // 标注框label数组
   const [labelArr, setLabelArr] = useState([])
+  // 标签和颜色对应关系
+  const labelToColor = useMemo(() => {
+    let obj = {}
+    labelArr.forEach((label, index) => {
+      obj[label] = COLORS[index]
+    })
+    return obj
+  }, [labelArr])
+
   // 编辑标签框是否显示
   const [isModalOpen, setIsModalOpen] = useState(false)
-  // 标记框数组
-  const [rectArray, setRectArray] = useState([])
+
   // 导出全局json配置
   const [globalData, setGlobalData] = useState({
     settings: {},
@@ -70,6 +79,10 @@ const Dashboard = () => {
     img_id_list: [],
     version: "1.0",
   })
+
+  // 同步两个标注框
+  const [syncLabel, setSyncLabel] = useState(0)
+
   // 修改被选中的图片
   const changeSelectedImg = useCallback((id) => {
     setSelected(id)
@@ -121,20 +134,26 @@ const Dashboard = () => {
             <Editor
               imgList={imgList}
               selected={selected}
-              rectArray={rectArray}
+              labelType={labelType}
+              syncLabel={syncLabel}
+              labelToColor={labelToColor}
               setSelected={setSelected}
-              setRectArray={setRectArray}
+              setImgList={setImgList}
+              setSyncLabel={setSyncLabel}
             />
           </Content>
           {/* 右侧标注框列表 */}
           <Sider width={siderWidth}>
             <LabelTypeLIst
-              labelObj={labelObj}
+              imgList={imgList}
+              selected={selected}
               labelType={labelType}
               labelArr={labelArr}
-              rectArray={rectArray}
+              labelToColor={labelToColor}
+              setImgList={setImgList}
               changeLabelType={changeLabelType}
               setIsModalOpen={setIsModalOpen}
+              setSyncLabel={setSyncLabel}
             />
           </Sider>
         </Layout>

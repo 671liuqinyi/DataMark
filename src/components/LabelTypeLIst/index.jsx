@@ -1,4 +1,7 @@
-import React from "react"
+/**
+ * 右侧label列表
+ */
+import React, { useState } from "react"
 import { Collapse, List, Dropdown, message, Space } from "antd"
 const { Panel } = Collapse
 import DeleteIcon from "../../assets/trash.png"
@@ -13,49 +16,90 @@ const LabelTypes = [
 ]
 export default function LabelTypeLIst(props) {
   const {
-    labelObj,
+    imgList,
+    selected,
     labelType,
     labelArr,
-    rectArray,
+    labelToColor,
+    setImgList,
     changeLabelType,
     setIsModalOpen,
+    setSyncLabel,
   } = props
-  console.log(`rectArray`, rectArray)
+  // 标签四种类型对应数组
+  const labelObj = imgList[selected]?.labelObj || {
+    rect: [],
+    polygon: [],
+    point: [],
+    line: [],
+  }
 
-  const { rect, polygon, point, line } = labelObj
-  const listData = rectArray.map((rect) => {
+  console.log(`labelObj`, labelObj)
+
+  const listData = labelObj[labelType].map((type) => {
     return {
-      rect,
+      type,
     }
   })
+
+  // 删除标注框
+  const handleDelete = (item, index) => {
+    const newLabelList = imgList[selected].labelObj[labelType].filter(
+      (_, idx) => index !== idx
+    )
+    setImgList((imgList) => {
+      imgList[selected].labelObj[labelType] = newLabelList
+      return [...imgList]
+    })
+    // 删除标签后同步两个标注框数组
+    setSyncLabel((pre) => pre + 1)
+  }
   // 标注框列表
   const LabelList = () => (
     <List
       itemLayout="horizontal"
       dataSource={listData}
-      renderItem={(item, index) => (
-        <List.Item>
-          <div className="label-box">
-            <div
-              className="color-select"
-              style={{ backgroundColor: "skyblue" }}
-            ></div>
-            {/* 标注框内的标签选择列表 */}
-            <div className="label-select">
-              <LabelSelect />
+      renderItem={(item, index) => {
+        const label = imgList[selected].labelObj[labelType][index].label
+        // console.log(`RGB`, label, label ? COLORS[index] : "rgb(255, 255, 255)")
+        return (
+          <List.Item>
+            <div className="label-box">
+              <div
+                className="color-select"
+                style={{
+                  backgroundColor: `${
+                    label ? labelToColor[label] : "rgb(255, 255, 255)"
+                  }`,
+                }}
+              ></div>
+              {/* 标注框内的标签选择列表 */}
+              <div className="label-select">
+                <LabelSelect index={index} label={label} />
+              </div>
+              <div
+                className="delete-icon"
+                onClick={() => {
+                  handleDelete(item, index)
+                }}
+              >
+                <img src={DeleteIcon} alt="delete" />
+              </div>
             </div>
-            <div className="delete-icon">
-              <img src={DeleteIcon} alt="delete" />
-            </div>
-          </div>
-        </List.Item>
-      )}
+          </List.Item>
+        )
+      }}
     />
   )
 
-  const LabelSelect = () => {
+  const LabelSelect = ({ label, index }) => {
     const onClick = ({ key }) => {
-      message.info(`Click on item ${key}`)
+      setImgList((imgList) => {
+        imgList[selected].labelObj[labelType][index].label = labelArr[key]
+        return [...imgList]
+      })
+      // 修改标签后同步两个标注框数组
+      setSyncLabel((pre) => pre + 1)
     }
     const items = labelArr.map((label, index) => {
       return {
@@ -77,7 +121,7 @@ export default function LabelTypeLIst(props) {
             setIsModalOpen(true)
           }}
         >
-          选择标签
+          {!label ? "选择标签" : label}
         </Space>
       </Dropdown>
     )
@@ -90,6 +134,10 @@ export default function LabelTypeLIst(props) {
       expandIconPosition="end"
       onChange={([type]) => {
         console.log(`collapse changed`, type)
+        if (type !== "rect") {
+          message.warning(`功能开发ing！`)
+        }
+        // changeLabelType()
       }}
       className="right-container"
       defaultActiveKey={"rect"}
@@ -102,12 +150,6 @@ export default function LabelTypeLIst(props) {
             ) : (
               <LabelList />
             )}
-            {/* {rectArray.length === 0 ? (
-              // "当前类型还没有标注框"
-              rectArray.length
-            ) : (
-              <LabelList key={rectArray.length} />
-            )} */}
           </Panel>
         )
       })}

@@ -1,3 +1,6 @@
+/**
+ * 顶部菜单
+ */
 import { useState, useRef } from "react"
 import { MenuOutlined } from "@ant-design/icons"
 import { Dropdown, Space, message } from "antd"
@@ -15,7 +18,7 @@ const items = [
       },
       {
         key: "1-2",
-        label: "编辑标签",
+        label: "标签管理",
       },
     ],
   },
@@ -78,6 +81,13 @@ const Menu = (props) => {
           origin: file,
           url,
           name: file.name,
+          // 每张图片的label信息
+          labelObj: {
+            rect: [],
+            polygon: [],
+            point: [],
+            line: [],
+          },
         }
       })
       // console.log(`imgList`, imgList)

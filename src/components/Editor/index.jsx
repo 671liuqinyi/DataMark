@@ -1,3 +1,6 @@
+/**
+ * 标注主体界面
+ */
 import React, { useRef, useState, useEffect } from "react"
 import LeftArrow from "../../assets/left.png"
 import RightArrow from "../../assets/right.png"
@@ -7,7 +10,16 @@ import { Tooltip, message } from "antd"
 
 import "./index.scss"
 export default function Editor(props) {
-  const { imgList, selected, setSelected, rectArray, setRectArray } = props
+  const {
+    imgList,
+    selected,
+    labelType,
+    syncLabel,
+    labelToColor,
+    setSelected,
+    setImgList,
+    setSyncLabel,
+  } = props
   const imageObj = imgList[selected]
 
   // canvas元素
@@ -39,7 +51,7 @@ export default function Editor(props) {
       canvasRef.current.onmousemove = null
       canvasRef.current.onmouseup = null
     }
-  }, [ctx, rectArray, selected])
+  }, [ctx, selected, imgList])
 
   // ******************* 画图相关start ********************/
   function Rect(startX, startY, endX, endY, color) {
@@ -49,9 +61,17 @@ export default function Editor(props) {
     this.endY = endY
     this.color = color
     this.isSelected = false
+    this.label = ""
   }
 
-  let rectList = useRef([])
+  const rectList = useRef([])
+  // syncLabel修改时同步两个标注框数组
+  useEffect(() => {
+    // console.log(`sync`)
+    rectList.current = imgList[selected]?.labelObj[labelType] ?? []
+  }, [syncLabel, selected])
+
+  // console.log(`rectList.current`, rectList.current)
   let undoArray = []
   let redoArray = []
 
@@ -68,18 +88,7 @@ export default function Editor(props) {
 
   let currentRect
 
-  const colors = [
-    "red",
-    "green",
-    "blue",
-    "yellow",
-    "magenta",
-    "orange",
-    "brown",
-    "purple",
-    "pink",
-  ]
-  let color
+  let color = "yellow"
 
   function handleMousedown(e) {
     // 未导入图片时不能标注
@@ -135,7 +144,6 @@ export default function Editor(props) {
       // 绘制状态
       isDrawing = true
     }
-    color = colors[randomFromTo(0, 8)]
   }
 
   function handleMousemove(e) {
@@ -186,8 +194,25 @@ export default function Editor(props) {
 
   function handleMouseup(e) {
     if (isDrawing) {
-      rectList.current.unshift(new Rect(startX, startY, endX, endY, color))
-      setRectArray([...rectList.current])
+      // 鼠标误点击时不画框
+      if (Math.abs(startX - endX) < 5 || Math.abs(startY - endY) < 5) return
+      const newRect = new Rect(startX, startY, endX, endY, color)
+      // rectList.current.push(newRect)
+      console.log(`rectList.current`, rectList.current)
+
+      setImgList((imgList) => {
+        const newImageList = imgList.map((imgObj, index) => {
+          if (selected === index) {
+            // 在state中更新矩形
+            imgObj.labelObj[labelType].push(newRect)
+          }
+          return imgObj
+        })
+        console.log(`newImageList`, newImageList)
+        return newImageList
+      })
+      // 同步页面数据,展示矩形
+      setSyncLabel((pre) => pre + 1)
     }
     if (isDragging) {
       rectList.current.forEach((item) => {
@@ -201,8 +226,11 @@ export default function Editor(props) {
   }
   // 绘制所有已有矩形框
   function drawRects() {
+    // ctx未初始化时不画框
+    if (!ctx) return
     // 清除所有矩形
     clearCanvas()
+    // console.log(`rectList.current`, rectList.current)
     // 将列表保存的矩形画上去
     for (let i = 0; i < rectList.current.length; i++) {
       let rect = rectList.current[i]
@@ -212,23 +240,18 @@ export default function Editor(props) {
       ctx.lineTo(rect.endX, rect.endY)
       ctx.lineTo(rect.startX, rect.endY)
       ctx.lineTo(rect.startX, rect.startY)
-      ctx.strokeStyle = rect.color
+      ctx.strokeStyle = rect.label ? labelToColor[rect.label] : color
       ctx.lineWidth = 3
       // 高亮选中矩形
       if (rect.isSelected) {
         ctx.globalAlpha = 0.3
-        ctx.fillStyle = rect.color
+        ctx.fillStyle = rect.label ? labelToColor[rect.label] : color
         ctx.fill()
       }
       ctx.globalAlpha = 1
 
       ctx.stroke()
     }
-  }
-
-  //在某个范围内生成随机数
-  function randomFromTo(from, to) {
-    return Math.floor(Math.random() * (to - from + 1) + from)
   }
 
   // 删除所有矩形框，清空画布
@@ -261,9 +284,13 @@ export default function Editor(props) {
         canvas.width,
         canvas.height
       )
+      // 每次刷新时都要画框
+      drawRects()
     }
   }
+  // 每次刷新时都要显示图片
   showImage(imageObj?.url)
+
   // 切换图片
   const go = (type) => () => {
     if (selected === -1) {

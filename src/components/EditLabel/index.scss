@@ -20,5 +20,27 @@
     }
   }
 
+  .progressing {
+    height: 160px;
+    text-align: center;
 
+    .progress-tip {
+      margin-top: 12px;
+    }
+  }
+
+  // AI label选择换行
+  .ant-checkbox-group {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .ant-checkbox-group-item {
+    width: 100px;
+  }
+
+  // 防止第二行开始缩进
+  .ant-checkbox-wrapper+.ant-checkbox-wrapper {
+    margin-inline-start: 0px;
+  }
 }

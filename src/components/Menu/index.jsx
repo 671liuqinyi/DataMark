@@ -19,7 +19,7 @@ const items = [
       },
       {
         key: "1-2",
-        label: "导入模型",
+        label: "导入标注数据",
       },
     ],
   },
@@ -41,14 +41,25 @@ const items = [
   {
     key: "3",
     type: "group",
-    label: "导出数据",
+    label: "智能化",
     children: [
       {
         key: "3-1",
+        label: "AI辅助标注",
+      },
+    ],
+  },
+  {
+    key: "4",
+    type: "group",
+    label: "导出数据",
+    children: [
+      {
+        key: "4-1",
         label: "json格式",
       },
       {
-        key: "3-2",
+        key: "4-2",
         label: "标注数据保存",
       },
     ],
@@ -70,18 +81,22 @@ const Menu = (props) => {
   } = props
   // 文件上传框
   const fileRef = useRef()
-
+  // ai标注modal是否显示
+  const [isAIAssist, setIsAIAssist] = useState(false)
   // 加载图片
   const loadImages = async () => {
     fileRef.current.click()
     fileRef.current.onchange = () => {
-      const files = Array.from(fileRef.current.files)
+      let files = Array.from(fileRef.current.files)
+      // 过滤数组中已经存在的图片
+      const img_id_list = imgList.map((img) => img.name)
+      files = files.filter((file) => !img_id_list.includes(file.name))
       // 转换图片格式，同时生成url
-      const imgList = files.map((file, index) => {
+      const newImgList = files.map((file) => {
         // console.log(`file`, file)
         const url = URL.createObjectURL(file)
         return {
-          id: index,
+          id: file.name,
           origin: file,
           url,
           name: file.name,
@@ -94,13 +109,16 @@ const Menu = (props) => {
           },
         }
       })
-      console.log(`imgList`, imgList)
+      console.log(`newImgList`, newImgList)
+      if (newImgList.length === 0) return
 
-      setImgList(imgList)
-
+      setImgList([...imgList, ...newImgList])
       // 收集图像名称列表，用于导出json
-      const img_id_list = files.map((file) => file.name)
-      setGlobalData((prevValue) => ({ ...prevValue, img_id_list }))
+      // const new_img_id_list = files.map((file) => file.name)
+      // setGlobalData((prevValue) => ({
+      //   ...prevValue,
+      //   img_id_list: [...prevValue.img_id_list, ...new_img_id_list],
+      // }))
       // 默认选中第一个图片
       setSelected(0)
     }
@@ -160,6 +178,17 @@ const Menu = (props) => {
     URL.revokeObjectURL(url)
   }
 
+  // AI辅助标注
+  const startAIAssist = () => {
+    console.log(`imgList`, imgList)
+    if (imgList.length === 0) {
+      message.warning("请先导入图片！")
+      return
+    }
+    setIsAIAssist(true)
+    setIsModalOpen(true)
+  }
+
   // 保存数据
   const save = () => {}
   // 处理菜单点击事件
@@ -174,8 +203,12 @@ const Menu = (props) => {
       case "2-1":
         setIsModalOpen(true)
         break
-      // 导出json格式
+      // AI辅助标注
       case "3-1":
+        startAIAssist()
+        break
+      // 导出json格式
+      case "4-1":
         download()
         break
       default:
@@ -197,12 +230,23 @@ const Menu = (props) => {
         </Space>
       </Dropdown>
       {/* 隐藏的上传标签 */}
-      <input type="file" ref={fileRef} multiple hidden />
+      <input
+        type="file"
+        ref={fileRef}
+        multiple
+        hidden
+        // webkitdirectory="true"
+        // directory="true"
+        // accept=".jpg,.jpeg,.png,.gif"
+      />
+      {/* 添加标签 */}
       <EditLabel
         isModalOpen={isModalOpen}
         labelArr={labelArr}
         setIsModalOpen={setIsModalOpen}
         setLabelArr={setLabelArr}
+        isAIAssist={isAIAssist}
+        imgList={imgList}
       />
     </>
   )

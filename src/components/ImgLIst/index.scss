@@ -16,6 +16,7 @@
   }
 
   .pic-item {
+    position: relative;
     display: inline-block;
     width: 150px;
     height: 150px;
@@ -24,6 +25,7 @@
     cursor: pointer;
 
     img {
+      position: relative;
       width: 105px;
       height: 70px;
     }
@@ -53,6 +55,16 @@
       text-align: center;
     }
 
+    // 左下角已标注样式
+
+    .labeled {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      bottom: 5px;
+      right: 5px;
+      filter: invert(1) brightness(35%) sepia(100%) hue-rotate(172deg) saturate(2000%);
+    }
   }
 
 

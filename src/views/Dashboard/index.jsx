@@ -128,6 +128,7 @@ const Dashboard = () => {
             </div>
             <div className="proj-name">
               <div
+                style={{ display: "inline-block" }}
                 onClick={() => {
                   setInputVisible(true)
                 }}

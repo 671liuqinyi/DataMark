@@ -6,6 +6,7 @@ import LeftArrow from "../../assets/left.png"
 import RightArrow from "../../assets/right.png"
 import ZoomIn from "../../assets/zoom-in.png"
 import ZoomOut from "../../assets/zoom-out.png"
+import DeleteIcon from "../../assets/trash.png"
 import { Tooltip, message } from "antd"
 
 import "./index.scss"
@@ -313,11 +314,25 @@ export default function Editor(props) {
       setSelected(nextIndex)
     }
   }
+
+  // 删除选中图片
+  const handleDelete = () => {
+    setImgList((prev) => {
+      const newImgList = prev.filter((img) => img.id !== selected)
+      return [...newImgList]
+    })
+    setSelected(-1)
+  }
   return (
     <div className="editor">
       {/* 菜单 */}
       <div className="banner">
-        <div className="menu-button">
+        <div className="menu-button" onClick={handleDelete}>
+          <Tooltip title={"删除选中图片"}>
+            <img src={DeleteIcon} alt="delete" />
+          </Tooltip>
+        </div>
+        {/* <div className="menu-button">
           <Tooltip title={"缩小"}>
             <img src={ZoomOut} alt="zoom out" />
           </Tooltip>
@@ -326,7 +341,7 @@ export default function Editor(props) {
           <Tooltip title={"放大"}>
             <img src={ZoomIn} alt="zoom in" />
           </Tooltip>
-        </div>
+        </div> */}
       </div>
       {/* 画布 */}
       <div className="content">

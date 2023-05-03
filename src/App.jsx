@@ -7,7 +7,7 @@ import "./App.scss"
 
 function App() {
   // 公告是否展示
-  const [isModalOpen, setIsModalOpen] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleOk = () => {
     setIsModalOpen(false)
@@ -32,6 +32,7 @@ function App() {
           <strong>当前功能：</strong>
         </div>
         <p>1. 支持上传图片、标注、导出</p>
+        <p>2. 点击顶部中间的项目名称可以修改项目名称</p>
         <div>
           <strong>系统使用方法：</strong>
         </div>

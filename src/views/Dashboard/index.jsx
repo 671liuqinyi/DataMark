@@ -29,7 +29,7 @@ const siderWidth = 308
 
 const Dashboard = () => {
   // 项目名称
-  const [projName, setProjName] = useState("xxx")
+  const [projName, setProjName] = useState("name")
   // 项目名称输入框
   const [inputValue, setInputValue] = useState("")
   // 控制项目名称输入框是否可见
@@ -41,7 +41,7 @@ const Dashboard = () => {
   const [imgList, setImgList] = useState([])
   // 被选中的图片
   const [selected, setSelected] = useState(-1)
-  // 选中标注类型,默认画矩形框
+  // 选中标注类型,默认画矩形框（ rect-目标检测 | polygon-实例分割 | classification-图像分类）
   const [labelType, setLabelType] = useState("rect")
   // 标注框label数组
   const [labelArr, setLabelArr] = useState([])
@@ -73,16 +73,16 @@ const Dashboard = () => {
   // 同步两个标注框
   const [syncLabel, setSyncLabel] = useState(0)
   // 图片缩放比例数组
-  const scaleArr = useRef([])
+  const scaleObj = useRef({})
 
   // 修改被选中的图片
   const changeSelectedImg = useCallback((id) => {
     setSelected(id)
   }, [])
   // 修改标注类型
-  const changeLabelType = useCallback((type) => {
-    setLabelType(type)
-  }, [])
+  // const changeLabelType = useCallback((type) => {
+  //   setLabelType(type)
+  // }, [])
 
   // 修改项目名称失去焦点
   const handleInputConfirm = () => {
@@ -116,9 +116,11 @@ const Dashboard = () => {
                 globalData={globalData}
                 labelArr={labelArr}
                 isModalOpen={isModalOpen}
-                scaleArr={scaleArr}
+                scaleObj={scaleObj}
                 imgList={imgList}
                 projName={projName}
+                labelType={labelType}
+                setLabelType={setLabelType}
                 setIsModalOpen={setIsModalOpen}
                 setSelected={setSelected}
                 setImgList={setImgList}
@@ -148,13 +150,7 @@ const Dashboard = () => {
                     onPressEnter={handleInputConfirm}
                   />
                 ) : (
-                  // <div
-                  //   onClick={() => {
-                  //     setInputVisible(true)
-                  //   }}
-                  // >
                   projName
-                  // {/* </div> */}
                 )}
               </div>
             </div>
@@ -178,7 +174,7 @@ const Dashboard = () => {
               labelType={labelType}
               syncLabel={syncLabel}
               labelToColor={labelToColor}
-              scaleArr={scaleArr}
+              scaleObj={scaleObj}
               setSelected={setSelected}
               setImgList={setImgList}
               setSyncLabel={setSyncLabel}
@@ -193,7 +189,7 @@ const Dashboard = () => {
               labelArr={labelArr}
               labelToColor={labelToColor}
               setImgList={setImgList}
-              changeLabelType={changeLabelType}
+              // changeLabelType={changeLabelType}
               setIsModalOpen={setIsModalOpen}
               setSyncLabel={setSyncLabel}
             />

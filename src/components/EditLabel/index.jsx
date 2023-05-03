@@ -43,13 +43,15 @@ const EditLabel = (props) => {
         }
         // 开启进度展示
         timer = setInterval(() => {
-          if (percent <= 95) {
-            setPercent((percent) => {
-              return percent + Math.round(Math.random() + 1) * 2
-            })
-          } else {
-            clearInterval(timer)
-          }
+          setPercent((percent) => {
+            const step = Math.round(Math.random() + 1) * 8
+            if (step + percent <= 98) {
+              return step + percent
+            } else {
+              clearInterval(timer)
+              return 98
+            }
+          })
         }, 500)
         let response = await fetch("http://127.0.0.1:5000/upload", {
           method: "POST",

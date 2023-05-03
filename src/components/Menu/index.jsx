@@ -4,6 +4,7 @@
 import { useState, useRef } from "react"
 import { MenuOutlined } from "@ant-design/icons"
 import { Dropdown, Space, message } from "antd"
+import TaskModal from "./taskModal"
 import EditLabel from "../EditLabel"
 import { formatDate } from "../../utils"
 
@@ -19,7 +20,7 @@ const items = [
       },
       {
         key: "1-2",
-        label: "导入标注数据",
+        label: "导入已有数据",
       },
     ],
   },
@@ -29,13 +30,13 @@ const items = [
     label: "管理",
     children: [
       {
+        key: "2-2",
+        label: "选择任务类型",
+      },
+      {
         key: "2-1",
         label: "标签管理",
       },
-      // {
-      //   key: "2-2",
-      //   label: "其他格式",
-      // },
     ],
   },
   {
@@ -70,19 +71,23 @@ const Menu = (props) => {
     isModalOpen,
     globalData,
     labelArr,
-    scaleArr,
+    scaleObj,
     imgList,
     projName,
     setIsModalOpen,
     setSelected,
     setImgList,
+    labelType,
     setGlobalData,
     setLabelArr,
+    setLabelType,
   } = props
   // 文件上传框
   const fileRef = useRef()
   // ai标注modal是否显示
   const [isAIAssist, setIsAIAssist] = useState(false)
+  // 任务类型选择框是否显示
+  const [isTaskSelectModalOpen, setIsTaskSelectModalOpen] = useState(false)
   // 加载图片
   const loadImages = async () => {
     fileRef.current.click()
@@ -90,10 +95,10 @@ const Menu = (props) => {
       let files = Array.from(fileRef.current.files)
       // 过滤数组中已经存在的图片
       const img_id_list = imgList.map((img) => img.name)
+      console.log(`img_id_list`, img_id_list, files)
       files = files.filter((file) => !img_id_list.includes(file.name))
       // 转换图片格式，同时生成url
       const newImgList = files.map((file) => {
-        // console.log(`file`, file)
         const url = URL.createObjectURL(file)
         return {
           id: file.name,
@@ -104,15 +109,15 @@ const Menu = (props) => {
           labelObj: {
             rect: [],
             polygon: [],
-            point: [],
-            line: [],
+            classification: [],
+            // line: [],
           },
         }
       })
       console.log(`newImgList`, newImgList)
       if (newImgList.length === 0) return
-
-      setImgList([...imgList, ...newImgList])
+      const concatImgList = [...imgList, ...newImgList]
+      setImgList(concatImgList)
       // 收集图像名称列表，用于导出json
       // const new_img_id_list = files.map((file) => file.name)
       // setGlobalData((prevValue) => ({
@@ -120,28 +125,28 @@ const Menu = (props) => {
       //   img_id_list: [...prevValue.img_id_list, ...new_img_id_list],
       // }))
       // 默认选中第一个图片
-      setSelected(0)
+      setSelected(concatImgList[0].id)
     }
   }
 
   // 导出下载数据
   const download = () => {
-    // console.log(`scaleArr`, scaleArr.current)
+    console.log(`scaleObj`, scaleObj.current)
     const img_annotations = {}
-    imgList.forEach((img, index) => {
+    imgList.forEach((img) => {
       let temp = {}
       temp.filename = img.name
       temp.regions = img.labelObj["rect"].map((rect) => {
         return {
           shape_attributes: {
             name: "rect",
-            x: Math.round(rect.startX * scaleArr.current[index].x),
-            y: Math.round(rect.startY * scaleArr.current[index].y),
+            x: Math.round(rect.startX * scaleObj.current[img.id].x),
+            y: Math.round(rect.startY * scaleObj.current[img.id].y),
             width: Math.round(
-              (rect.endX - rect.startX) * scaleArr.current[index].x
+              (rect.endX - rect.startX) * scaleObj.current[img.id].x
             ),
             height: Math.round(
-              (rect.endY - rect.startY) * scaleArr.current[index].y
+              (rect.endY - rect.startY) * scaleObj.current[img.id].y
             ),
           },
           region_attributes: {
@@ -203,6 +208,10 @@ const Menu = (props) => {
       case "2-1":
         setIsModalOpen(true)
         break
+      // 打开任务选择弹窗，选择任务类别
+      case "2-2":
+        setIsTaskSelectModalOpen(true)
+        break
       // AI辅助标注
       case "3-1":
         startAIAssist()
@@ -216,6 +225,7 @@ const Menu = (props) => {
         break
     }
   }
+  const handleOk = () => {}
   return (
     <>
       <Dropdown
@@ -247,6 +257,13 @@ const Menu = (props) => {
         setLabelArr={setLabelArr}
         isAIAssist={isAIAssist}
         imgList={imgList}
+      />
+      {/* 选择标注任务类别 */}
+      <TaskModal
+        visible={isTaskSelectModalOpen}
+        setVisible={setIsTaskSelectModalOpen}
+        labelType={labelType}
+        setLabelType={setLabelType}
       />
     </>
   )

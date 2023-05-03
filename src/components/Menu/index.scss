@@ -1,0 +1,15 @@
+.modal-container {
+  box-sizing: content-box;
+  height: 140px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-card {
+  text-align: center;
+}
+
+.card-selected {
+  border: 3px solid skyblue;
+}

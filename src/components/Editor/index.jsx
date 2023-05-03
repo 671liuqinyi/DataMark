@@ -17,13 +17,12 @@ export default function Editor(props) {
     labelType,
     syncLabel,
     labelToColor,
-    scaleArr,
+    scaleObj,
     setSelected,
     setImgList,
     setSyncLabel,
   } = props
-  const imageObj = imgList[selected]
-
+  const imageObj = imgList.filter((img) => img.id === selected)[0]
   // canvas元素
   const canvasRef = useRef()
   // 背景图片(清除框后再填充回来，防止画框时背景消失)
@@ -70,7 +69,9 @@ export default function Editor(props) {
   // syncLabel修改时同步两个标注框数组
   useEffect(() => {
     // console.log(`sync`)
-    rectList.current = imgList[selected]?.labelObj[labelType] ?? []
+    const imageObj = imgList.filter((img) => img.id === selected)[0]
+    // console.log(`imageObj`, imageObj)
+    rectList.current = imageObj?.labelObj?.[labelType] ?? []
   }, [syncLabel, selected])
 
   // console.log(`rectList.current`, rectList.current)
@@ -204,7 +205,7 @@ export default function Editor(props) {
 
       setImgList((imgList) => {
         const newImageList = imgList.map((imgObj, index) => {
-          if (selected === index) {
+          if (selected === imgObj.id) {
             // 在state中更新矩形
             imgObj.labelObj[labelType].push(newRect)
           }
@@ -279,7 +280,7 @@ export default function Editor(props) {
         y: image.height / canvasRef.current.height,
       }
       // 更新数组
-      scaleArr.current[selected] = scale
+      scaleObj.current[selected] = scale
       ctx.drawImage(
         image,
         0,
@@ -306,11 +307,26 @@ export default function Editor(props) {
       message.warning("您还没有导入图片！")
       return
     }
+
+    let prevIndex
+    let nextIndex
+    imgList.forEach((img, index) => {
+      if (img.id === selected) {
+        if (index === 0) {
+          prevIndex = imgList[imgList.length - 1].id
+        } else {
+          prevIndex = imgList[index - 1].id
+        }
+        if (index === imgList.length - 1) {
+          nextIndex = imgList[0].id
+        } else {
+          nextIndex = imgList[index + 1].id
+        }
+      }
+    })
     if (type === "prev") {
-      const prevIndex = selected === 0 ? imgList.length - 1 : selected - 1
       setSelected(prevIndex)
     } else if (type === "next") {
-      const nextIndex = selected === imgList.length - 1 ? 0 : selected + 1
       setSelected(nextIndex)
     }
   }
@@ -321,7 +337,7 @@ export default function Editor(props) {
       const newImgList = prev.filter((img) => img.id !== selected)
       return [...newImgList]
     })
-    setSelected(-1)
+    // setSelected()
   }
   return (
     <div className="editor">

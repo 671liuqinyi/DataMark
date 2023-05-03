@@ -9,10 +9,15 @@ import DeleteIcon from "../../assets/trash.png"
 import "./index.scss"
 
 const LabelTypes = [
-  { id: 1, type: "rect", label: "矩形" },
-  { id: 2, type: "polygon", label: "多边形" },
-  { id: 3, type: "point", label: "其他类型" },
-  { id: 4, type: "line", label: "其他类型" },
+  { id: 1, type: "rect", label: "目标检测", description: "目标检测任务" },
+  { id: 2, type: "polygon", label: "图像/实例分割", description: "分割任务" },
+  {
+    id: 3,
+    type: "classification",
+    label: "图像分类",
+    description: "图像分类任务",
+  },
+  // { id: 4, type: "line", label: "其他类型" },
 ]
 export default function LabelTypeLIst(props) {
   const {
@@ -22,16 +27,17 @@ export default function LabelTypeLIst(props) {
     labelArr,
     labelToColor,
     setImgList,
-    changeLabelType,
+    // changeLabelType,
     setIsModalOpen,
     setSyncLabel,
   } = props
+  const imageObj = imgList.filter((img) => img.id === selected)[0]
   // 标签四种类型对应数组
-  const labelObj = imgList[selected]?.labelObj || {
+  const labelObj = imageObj?.labelObj || {
     rect: [],
     polygon: [],
-    point: [],
-    line: [],
+    classification: [],
+    // line: [],
   }
 
   console.log(`labelObj`, labelObj)
@@ -44,11 +50,15 @@ export default function LabelTypeLIst(props) {
 
   // 删除标注框
   const handleDelete = (item, index) => {
-    const newLabelList = imgList[selected].labelObj[labelType].filter(
+    const newLabelList = imageObj?.labelObj[labelType].filter(
       (_, idx) => index !== idx
     )
     setImgList((imgList) => {
-      imgList[selected].labelObj[labelType] = newLabelList
+      imgList.forEach((img) => {
+        if (img.id === selected) {
+          img.labelObj[labelType] = newLabelList
+        }
+      })
       return [...imgList]
     })
     // 删除标签后同步两个标注框数组
@@ -60,7 +70,7 @@ export default function LabelTypeLIst(props) {
       itemLayout="horizontal"
       dataSource={listData}
       renderItem={(item, index) => {
-        const label = imgList[selected].labelObj[labelType][index].label
+        const label = imageObj?.labelObj[labelType][index].label
         // console.log(`RGB`, label, label ? COLORS[index] : "rgb(255, 255, 255)")
         return (
           <List.Item>
@@ -95,7 +105,11 @@ export default function LabelTypeLIst(props) {
   const LabelSelect = ({ label, index }) => {
     const onClick = ({ key }) => {
       setImgList((imgList) => {
-        imgList[selected].labelObj[labelType][index].label = labelArr[key]
+        imgList.forEach((img) => {
+          if (img.id === selected) {
+            img.labelObj[labelType][index].label = labelArr[key]
+          }
+        })
         return [...imgList]
       })
       // 修改标签后同步两个标注框数组
@@ -132,15 +146,15 @@ export default function LabelTypeLIst(props) {
       accordion
       ghost
       expandIconPosition="end"
-      onChange={([type]) => {
-        console.log(`collapse changed`, type)
-        if (type !== "rect") {
-          message.warning(`功能开发ing！`)
-        }
-        // changeLabelType()
-      }}
+      // onChange={([type]) => {
+      //   console.log(`collapse changed`, type)
+      //   if (type !== "rect") {
+      //     message.warning(`功能开发ing！`)
+      //   }
+      //   // changeLabelType()
+      // }}
       className="right-container"
-      defaultActiveKey={"rect"}
+      // defaultActiveKey={"rect"}
     >
       {LabelTypes.map(({ id, type, label }) => {
         return (

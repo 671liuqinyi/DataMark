@@ -70,7 +70,7 @@ const Dashboard = () => {
     version: "1.0",
   })
 
-  // 同步两个标注框
+  // 同步两个标注框数组
   const [syncLabel, setSyncLabel] = useState(0)
   // 图片缩放比例数组
   const scaleObj = useRef({})
@@ -124,6 +124,7 @@ const Dashboard = () => {
                 setIsModalOpen={setIsModalOpen}
                 setSelected={setSelected}
                 setImgList={setImgList}
+                setSyncLabel={setSyncLabel}
                 setGlobalData={setGlobalData}
                 setLabelArr={setLabelArr}
               />

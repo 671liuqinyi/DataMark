@@ -81,6 +81,7 @@ const Menu = (props) => {
     setGlobalData,
     setLabelArr,
     setLabelType,
+    setSyncLabel,
   } = props
   // 文件上传框
   const fileRef = useRef()
@@ -183,11 +184,33 @@ const Menu = (props) => {
     URL.revokeObjectURL(url)
   }
 
-  // AI辅助标注
+  // 2-1 编辑标签
+  const editLabel = () => {
+    if (imgList.length === 0) {
+      message.warning("请先导入图片！")
+      return
+    }
+    setIsModalOpen(true)
+  }
+
+  // 2-2 选择任务类型
+  const selectTask = () => {
+    if (imgList.length === 0) {
+      message.warning("请先导入图片！")
+      return
+    }
+    setIsTaskSelectModalOpen(true)
+  }
+
+  // 3-1 AI辅助标注
   const startAIAssist = () => {
     console.log(`imgList`, imgList)
     if (imgList.length === 0) {
       message.warning("请先导入图片！")
+      return
+    }
+    if (labelType !== "rect") {
+      message.warning("当前任务不支持AI标注！")
       return
     }
     setIsAIAssist(true)
@@ -206,11 +229,11 @@ const Menu = (props) => {
         break
       // 编辑标签
       case "2-1":
-        setIsModalOpen(true)
+        editLabel()
         break
       // 打开任务选择弹窗，选择任务类别
       case "2-2":
-        setIsTaskSelectModalOpen(true)
+        selectTask()
         break
       // AI辅助标注
       case "3-1":
@@ -257,6 +280,10 @@ const Menu = (props) => {
         setLabelArr={setLabelArr}
         isAIAssist={isAIAssist}
         imgList={imgList}
+        labelType={labelType}
+        setImgList={setImgList}
+        setSyncLabel={setSyncLabel}
+        scaleObj={scaleObj}
       />
       {/* 选择标注任务类别 */}
       <TaskModal

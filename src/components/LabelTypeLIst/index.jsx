@@ -8,17 +8,22 @@ import DeleteIcon from "../../assets/trash.png"
 
 import "./index.scss"
 
-const LabelTypes = [
-  { id: 1, type: "rect", label: "目标检测", description: "目标检测任务" },
-  { id: 2, type: "polygon", label: "图像/实例分割", description: "分割任务" },
-  {
+const LabelTypes = {
+  rect: { id: 1, type: "rect", label: "目标检测", description: "目标检测任务" },
+  polygon: {
+    id: 2,
+    type: "polygon",
+    label: "图像/实例分割",
+    description: "分割任务",
+  },
+  classification: {
     id: 3,
     type: "classification",
     label: "图像分类",
     description: "图像分类任务",
   },
-  // { id: 4, type: "line", label: "其他类型" },
-]
+  // line:{ id: 4, type: "line", label: "其他类型" },
+}
 export default function LabelTypeLIst(props) {
   const {
     imgList,
@@ -154,19 +159,15 @@ export default function LabelTypeLIst(props) {
       //   // changeLabelType()
       // }}
       className="right-container"
-      // defaultActiveKey={"rect"}
+      activeKey={labelType}
     >
-      {LabelTypes.map(({ id, type, label }) => {
-        return (
-          <Panel header={label} key={type}>
-            {labelObj[type].length === 0 ? (
-              "当前类型还没有标注框"
-            ) : (
-              <LabelList />
-            )}
-          </Panel>
-        )
-      })}
+      <Panel header={LabelTypes[labelType].label} key={labelType}>
+        {labelObj[labelType].length === 0 ? (
+          "当前类型还没有标注框"
+        ) : (
+          <LabelList />
+        )}
+      </Panel>
     </Collapse>
   )
 }

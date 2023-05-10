@@ -1,3 +1,7 @@
+/**
+ * 任务选择界面
+ * 选择当前要做的是那种数据标注任务（ 图像/实例分割 | 目标检测 | 图像分类 ）
+ */
 import { Modal, Button, Card, message } from "antd"
 import Classification from "../../assets/classification.png"
 import Detection from "../../assets/detection.png"
@@ -17,19 +21,22 @@ const DetectionCard = ({ title, imageSrc, onClick, isSelected }) => {
   )
 }
 const TaskModal = ({ visible, setVisible, labelType, setLabelType }) => {
-  console.log(`labelType`, labelType)
+  // console.log(`labelType`, labelType)
   const onCancel = () => {
     setVisible(false)
   }
   const onDetect = () => {
+    if (labelType === "rect") return
     setLabelType("rect")
     message.success("您当前选中的是目标检测任务！")
   }
   const onSegment = () => {
+    if (labelType === "polygon") return
     setLabelType("polygon")
     message.success("您当前选中的是图像/实例分割任务！")
   }
   const onClassify = () => {
+    if (labelType === "classification") return
     setLabelType("classification")
     message.success("您当前选中的是图像分类任务！")
   }

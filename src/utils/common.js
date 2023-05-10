@@ -1,3 +1,7 @@
+/**
+ * 公共库函数
+ */
+import { labelList } from "./constant"
 // 防抖
 function debounce(func, delay = 100) {
   let timer
@@ -22,6 +26,7 @@ function throttle(fn, delay = 100) {
   }
 }
 
+// 时间格式转化
 function formatDate(timestamp) {
   const date = new Date(timestamp) // 将Unix时间戳转换为毫秒数
   const year = date.getFullYear()
@@ -33,4 +38,19 @@ function formatDate(timestamp) {
   return `${year}/${month}/${day} ${hours}/${minutes}/${seconds}`
 }
 
-export { debounce, throttle, formatDate }
+// 矩形类
+function Rect(startX, startY, endX, endY, color = "yellow", label = "") {
+  this.startX = startX
+  this.startY = startY
+  this.endX = endX
+  this.endY = endY
+  this.color = color
+  this.isSelected = false
+  this.label = label
+}
+
+// 将coco数字类别转换为label对象
+const classToType = (number) => {
+  return labelList.find((item) => item.index === number) || {}
+}
+export { debounce, throttle, formatDate, Rect, classToType }

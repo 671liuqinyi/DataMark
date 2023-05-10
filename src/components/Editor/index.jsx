@@ -8,7 +8,7 @@ import ZoomIn from "../../assets/zoom-in.png"
 import ZoomOut from "../../assets/zoom-out.png"
 import DeleteIcon from "../../assets/trash.png"
 import { Tooltip, message } from "antd"
-
+import { Rect } from "../../utils"
 import "./index.scss"
 export default function Editor(props) {
   const {
@@ -54,16 +54,21 @@ export default function Editor(props) {
     }
   }, [ctx, selected, imgList])
 
+  useEffect(() => {
+    // 初始化图片缩放比例
+    initImageScale()
+  }, [imgList])
+
   // ******************* 画图相关start ********************/
-  function Rect(startX, startY, endX, endY, color) {
-    this.startX = startX
-    this.startY = startY
-    this.endX = endX
-    this.endY = endY
-    this.color = color
-    this.isSelected = false
-    this.label = ""
-  }
+  // function Rect(startX, startY, endX, endY, color) {
+  //   this.startX = startX
+  //   this.startY = startY
+  //   this.endX = endX
+  //   this.endY = endY
+  //   this.color = color
+  //   this.isSelected = false
+  //   this.label = ""
+  // }
 
   const rectList = useRef([])
   // syncLabel修改时同步两个标注框数组
@@ -259,28 +264,47 @@ export default function Editor(props) {
 
   // 删除所有矩形框，清空画布
   function clearCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+    // console.log(`!canvas`, canvas)
+
     // 清除完之后把背景图片放回去
     ctx.putImageData(backgroundRef.current, 0, 0)
   }
 
   // **************** 画图相关end ********************/
 
+  // 初始化图片缩放比例
+  const initImageScale = () => {
+    imgList.forEach((img) => {
+      const image = new Image()
+      image.src = img.url
+      image.onload = () => {
+        const scale = {
+          x: image.width / canvasRef.current.width,
+          y: image.height / canvasRef.current.height,
+          width: image.width,
+          height: image.height,
+        }
+        // 更新数组
+        scaleObj.current[img.id] = scale
+      }
+    })
+  }
+
   // 根据当前选中的url展示不同的图片
   const showImage = (url) => {
     // 初始化时不生成图片
-    if (!url) return
+    if (!url) {
+      // 图片被删除完时清理canvas
+      ctx &&
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+      return
+    }
     // 生成图片
     const image = new Image()
     image.src = url
     image.onload = () => {
       // console.log(`img-width-height`, image.width, image.height)
-      const scale = {
-        x: image.width / canvasRef.current.width,
-        y: image.height / canvasRef.current.height,
-      }
-      // 更新数组
-      scaleObj.current[selected] = scale
       ctx.drawImage(
         image,
         0,
@@ -291,8 +315,8 @@ export default function Editor(props) {
       backgroundRef.current = ctx.getImageData(
         0,
         0,
-        canvas.width,
-        canvas.height
+        canvasRef.current.width,
+        canvasRef.current.height
       )
       // 每次刷新时都要画框
       drawRects()
@@ -303,7 +327,7 @@ export default function Editor(props) {
 
   // 切换图片
   const go = (type) => () => {
-    if (selected === -1) {
+    if (imgList.length === 0) {
       message.warning("您还没有导入图片！")
       return
     }
@@ -333,21 +357,25 @@ export default function Editor(props) {
 
   // 删除选中图片
   const handleDelete = () => {
+    if (imgList.length === 0) return
     setImgList((prev) => {
       const newImgList = prev.filter((img) => img.id !== selected)
+      // 删除后更新选中图片
+      setSelected(newImgList.length === 0 ? -1 : newImgList[0].id)
       return [...newImgList]
     })
-    // setSelected()
   }
   return (
     <div className="editor">
       {/* 菜单 */}
       <div className="banner">
-        <div className="menu-button" onClick={handleDelete}>
-          <Tooltip title={"删除选中图片"}>
-            <img src={DeleteIcon} alt="delete" />
-          </Tooltip>
-        </div>
+        {imgList.length !== 0 && (
+          <div className="menu-button" onClick={handleDelete}>
+            <Tooltip title={"删除选中图片"}>
+              <img src={DeleteIcon} alt="delete" />
+            </Tooltip>
+          </div>
+        )}
         {/* <div className="menu-button">
           <Tooltip title={"缩小"}>
             <img src={ZoomOut} alt="zoom out" />
@@ -362,7 +390,8 @@ export default function Editor(props) {
       {/* 画布 */}
       <div className="content">
         <canvas
-          id="canvas"
+          // id="canvas"
+          className="canvas"
           width={Math.floor(document.documentElement.clientWidth - 308 - 308)}
           height={Math.floor(
             document.documentElement.clientHeight - 33 - 40 - 40

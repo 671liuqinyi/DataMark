@@ -109,7 +109,7 @@ const Dashboard = () => {
     >
       <Layout>
         <Header style={headerStyle}>
-          <div className="header-container">
+          <div className="no-select header-container">
             <div className="logo">DataMark</div>
             <div className="menu">
               <Menu

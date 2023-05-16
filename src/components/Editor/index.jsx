@@ -28,6 +28,12 @@ export default function Editor(props) {
   // 背景图片(清除框后再填充回来，防止画框时背景消失)
   const backgroundRef = useRef()
   const [ctx, setCtx] = useState()
+  // canvas鼠标样式
+  const [cursor, setCursor] = useState("default")
+  // 缩放矩形框的类型
+  // [↖,↑,↗,←,→,↙,↓,↘,move,default]
+  // [left-top,top,right-top,left,right,left-bottom,bottom,right-bottom,move,default]
+  const resizeTag = useRef("default")
 
   useEffect(() => {
     // 初始化canvas上下文
@@ -52,7 +58,7 @@ export default function Editor(props) {
       canvasRef.current.onmousemove = null
       canvasRef.current.onmouseup = null
     }
-  }, [ctx, selected, imgList])
+  }, [ctx, selected, imgList, cursor])
 
   useEffect(() => {
     // 初始化图片缩放比例
@@ -83,80 +89,147 @@ export default function Editor(props) {
   let undoArray = []
   let redoArray = []
 
-  let startX
-  let startY
-  let endX
-  let endY
+  let startX = 0
+  let startY = 0
+  let endX = 0
+  let endY = 0
 
-  let width = 0
-  let height = 0
+  let widthBias = 0
+  let heightBias = 0
 
   let isDrawing = false
   let isDragging = false
+  let isResizing = false
 
-  let currentRect
+  let currentRect = useRef()
+  let rectIndex = useRef()
 
   let color = "yellow"
+  // 判断鼠标点击点是否落在已有标注框内
+  const isFrameExist = (item) => {
+    if (item.startX < item.endX) {
+      if (item.startY < item.endY) {
+        return (
+          startX > item.startX &&
+          startX < item.endX &&
+          startY > item.startY &&
+          startY < item.endY
+        )
+      } else {
+        return (
+          startX > item.startX &&
+          startX < item.endX &&
+          startY > item.endY &&
+          startY < item.startY
+        )
+      }
+    } else {
+      if (item.startY < item.endY) {
+        return (
+          startX > item.endY &&
+          startX < item.startY &&
+          startY > item.startY &&
+          startY < item.endY
+        )
+      } else {
+        return (
+          startX > item.startX &&
+          startX < item.endX &&
+          startY > item.endY &&
+          startY < item.startY
+        )
+      }
+    }
+  }
+  // 调整标注框大小
+  const resizeLabelFrame = (type) => {
+    switch (type) {
+      case "left-top": {
+        console.log(`currentRect`, currentRect.current)
+        let x1, y1, x2, y2
+        x1 = endX
+        y1 = endY
+        x2 = currentRect.current.endX
+        y2 = currentRect.current.endY
+        drawRects()
+        // 绘制新矩形框
+        ctx.beginPath()
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(x2, y1)
+        ctx.lineTo(x2, y2)
+        ctx.lineTo(x1, y2)
+        ctx.lineTo(x1, y1)
+        ctx.strokeStyle = color
+        ctx.lineWidth = 3
+        ctx.stroke()
+        break
+      }
+
+      case "top":
+        console.log(`2`)
+        break
+      case "right-top":
+        console.log(`3`)
+        break
+      case "left":
+        console.log(`4`)
+        break
+      case "right":
+        console.log(`5`)
+        break
+      case "left-bottom":
+        console.log(`6`)
+        break
+      case "bottom":
+        console.log(`7`)
+        break
+      case "right-bottom":
+        console.log(`8`)
+        break
+      default:
+        break
+    }
+  }
 
   function handleMousedown(e) {
     // 未导入图片时不能标注
     if (selected === -1) return
+
     startX = e.offsetX
     startY = e.offsetY
-    const rectIndex = rectList.current.findIndex((item) => {
-      if (item.startX < item.endX) {
-        if (item.startY < item.endY) {
-          return (
-            startX > item.startX &&
-            startX < item.endX &&
-            startY > item.startY &&
-            startY < item.endY
-          )
-        } else {
-          return (
-            startX > item.startX &&
-            startX < item.endX &&
-            startY > item.endY &&
-            startY < item.startY
-          )
-        }
+    // 正常情况
+    if (["default", "move"].includes(cursor)) {
+      rectIndex.current = rectList.current.findIndex((item) =>
+        isFrameExist(item)
+      )
+      currentRect.current = rectList.current[rectIndex.current]
+      if (currentRect.current && currentRect.current.isSelected === true) {
+        isDragging = true
+        isDrawing = false
       } else {
-        if (item.startY < item.endY) {
-          return (
-            startX > item.endY &&
-            startX < item.startY &&
-            startY > item.startY &&
-            startY < item.endY
-          )
-        } else {
-          return (
-            startX > item.startX &&
-            startX < item.endX &&
-            startY > item.endY &&
-            startY < item.startY
-          )
-        }
+        isDragging = false
+        isDrawing = true
       }
-    })
-    // rectIndex不为-1，代表当前是拖拽状态
-    if (rectIndex !== -1) {
-      currentRect = rectList.current[rectIndex]
-      isDragging = true
-      currentRect.isSelected = true
-      undoArray.pop()
-      const tempRectList = rectList.current.slice()
-      const tempCurrentRect = Object.assign({}, currentRect)
-      tempRectList.splice(rectIndex, 1, tempCurrentRect)
-      undoArray.push(tempRectList)
     } else {
-      // 绘制状态
-      isDrawing = true
+      // 矩形框缩放情况
+      isResizing = true
     }
   }
 
   function handleMousemove(e) {
     endX = e.offsetX
     endY = e.offsetY
+    if (isResizing) {
+      console.log(`isResizing move`)
+      // 临时加一个rect，等到鼠标松开时替换掉原来的rect
+      resizeLabelFrame(resizeTag.current)
+    } else {
+      // 改变canvas的cursor样式
+      if (currentRect.current && currentRect.current.isSelected) {
+        changeCursor()
+      }
+    }
+
     if (isDrawing) {
       drawRects()
       // 绘制新矩形框
@@ -172,47 +245,72 @@ export default function Editor(props) {
     } else if (isDragging) {
       const w = Math.abs(startX - endX)
       const h = Math.abs(startY - endY)
+      // 累计拖动距离
+      widthBias += w
+      heightBias += h
+
       if (endX < startX) {
         startX -= w
         endX -= w
-        currentRect.startX -= w
-        currentRect.endX -= w
+        currentRect.current.startX -= w
+        currentRect.current.endX -= w
       }
       if (endX >= startX) {
         startX += w
         endX += w
-        currentRect.startX += w
-        currentRect.endX += w
+        currentRect.current.startX += w
+        currentRect.current.endX += w
       }
       if (endY < startY) {
         startY -= h
         endY -= h
-        currentRect.startY -= h
-        currentRect.endY -= h
+        currentRect.current.startY -= h
+        currentRect.current.endY -= h
       }
       if (endY >= startY) {
         startY += h
         endY += h
-        currentRect.startY += h
-        currentRect.endY += h
+        currentRect.current.startY += h
+        currentRect.current.endY += h
       }
       drawRects()
     }
   }
 
   function handleMouseup(e) {
+    endX = e.offsetX
+    endY = e.offsetY
     if (isDrawing) {
-      // 鼠标误点击时不画框
-      if (Math.abs(startX - endX) < 5 || Math.abs(startY - endY) < 5) return
+      // 鼠标误点击
+      if (
+        rectIndex.current === -1 &&
+        (Math.abs(startX - endX) < 5 || Math.abs(startY - endY) < 5)
+      ) {
+        isDrawing = false
+        isDragging = false
+        return
+      }
       const newRect = new Rect(startX, startY, endX, endY, color)
       // rectList.current.push(newRect)
       console.log(`rectList.current`, rectList.current)
 
       setImgList((imgList) => {
-        const newImageList = imgList.map((imgObj, index) => {
+        const newImageList = imgList.map((imgObj) => {
           if (selected === imgObj.id) {
-            // 在state中更新矩形
-            imgObj.labelObj[labelType].push(newRect)
+            // 取消之前选中状态
+            imgObj.labelObj[labelType].forEach(
+              (item) => (item.isSelected = false)
+            )
+            // 鼠标移动距离太小时，如果鼠标在框内，选中当前矩形框
+            if (Math.abs(startX - endX) < 5 || Math.abs(startY - endY) < 5) {
+              imgObj.labelObj[labelType][rectIndex.current].isSelected = true
+            } else {
+              // 在state中更新矩形
+              imgObj.labelObj[labelType].push(newRect)
+              // 新建时确定当前选中矩形
+              currentRect.current = newRect
+              rectIndex.current = imgObj.labelObj[labelType].length - 1
+            }
           }
           return imgObj
         })
@@ -223,15 +321,138 @@ export default function Editor(props) {
       setSyncLabel((pre) => pre + 1)
     }
     if (isDragging) {
-      rectList.current.forEach((item) => {
-        item.isSelected = false
+      if (widthBias < 5 || heightBias < 5) {
+        setImgList((imgList) => {
+          const newImageList = imgList.map((imgObj) => {
+            if (selected === imgObj.id) {
+              // 鼠标移动距离太小时，如果鼠标在框内，取消当前矩形框选中状态
+              imgObj.labelObj[labelType][rectIndex.current].isSelected = false
+              setCursor("default")
+            }
+            return imgObj
+          })
+          return newImageList
+        })
+        // 同步页面数据,展示矩形
+        setSyncLabel((pre) => pre + 1)
+      }
+    }
+    if (isResizing) {
+      console.log(`isResizing end`)
+      setImgList((imgList) => {
+        const newImageList = imgList.map((imgObj) => {
+          if (selected === imgObj.id) {
+            // 修改rect状态
+            imgObj.labelObj[labelType].forEach((item) => {
+              if (item.isSelected === true) {
+                // 重新排列矩形框起始点和终点坐标
+                if (endX < item.endX && endY < item.endY) {
+                  item.startX = endX
+                  item.startY = endY
+                } else {
+                  item.startX = item.endX
+                  item.startY = item.endY
+                  item.endX = endX
+                  item.endY = endY
+                }
+              }
+            })
+          }
+          return imgObj
+        })
+        console.log(`newImageList`, newImageList)
+        return newImageList
       })
+      // 同步页面数据,展示矩形
+      setSyncLabel((pre) => pre + 1)
     }
     undoArray.push(rectList.current.slice())
     redoArray = []
     isDrawing = false
     isDragging = false
+    isResizing = false
+    widthBias = 0
+    heightBias = 0
   }
+
+  // 改变canvas的cursor样式
+  function changeCursor() {
+    const rect = currentRect.current
+    let width = rect.endX - rect.startX
+    let height = rect.endY - rect.startY
+
+    if (
+      // ↖
+      Math.abs(rect.startX - endX) <= 5 &&
+      Math.abs(rect.startY - endY) <= 5
+    ) {
+      setCursor("nwse-resize")
+      resizeTag.current = "left-top"
+    } else if (
+      // ↘
+      Math.abs(rect.endX - endX) <= 5 &&
+      Math.abs(rect.endY - endY) <= 5
+    ) {
+      setCursor("nwse-resize")
+      resizeTag.current = "right-bottom"
+    } else if (
+      // ↗
+      Math.abs(rect.endX - endX) <= 5 &&
+      Math.abs(rect.startY - endY) <= 5
+    ) {
+      setCursor("nesw-resize")
+      resizeTag.current = "right-top"
+    } else if (
+      // ↙
+      Math.abs(rect.startX - endX) <= 5 &&
+      Math.abs(rect.endY - endY) <= 5
+    ) {
+      setCursor("nesw-resize")
+      resizeTag.current = "left-bottom"
+    } else if (
+      // ←
+      Math.abs(rect.startX - endX) <= 5 &&
+      Math.abs(rect.startY + height / 2 - endY) <= 5
+    ) {
+      setCursor("ew-resize")
+      resizeTag.current = "left"
+    } else if (
+      // →
+      Math.abs(rect.endX - endX) <= 5 &&
+      Math.abs(rect.startY + height / 2 - endY) <= 5
+    ) {
+      setCursor("ew-resize")
+      resizeTag.current = "right"
+    } else if (
+      // ↑
+      Math.abs(rect.startX + width / 2 - endX) <= 5 &&
+      Math.abs(rect.startY - endY) <= 5
+    ) {
+      setCursor("ns-resize")
+      resizeTag.current = "top"
+    } else if (
+      // ↓
+      Math.abs(rect.startX + width / 2 - endX) <= 5 &&
+      Math.abs(rect.endY - endY) <= 5
+    ) {
+      setCursor("ns-resize")
+      resizeTag.current = "bottom"
+    } else if (
+      endX > rect.startX + 5 &&
+      endX < rect.endX - 5 &&
+      endY > rect.startY + 5 &&
+      endY < rect.endY - 5
+    ) {
+      // move样式
+      setCursor("move")
+      resizeTag.current = 9
+    } else {
+      // 默认
+      setCursor("default")
+      resizeTag.current = 10
+    }
+  }
+
   // 绘制所有已有矩形框
   function drawRects() {
     // ctx未初始化时不画框
@@ -249,19 +470,71 @@ export default function Editor(props) {
       ctx.lineTo(rect.startX, rect.endY)
       ctx.lineTo(rect.startX, rect.startY)
       ctx.strokeStyle = rect.label ? labelToColor[rect.label] : color
-      ctx.lineWidth = 3
+      ctx.lineWidth = 2
+      ctx.stroke()
       // 高亮选中矩形
       if (rect.isSelected) {
         ctx.globalAlpha = 0.3
         ctx.fillStyle = rect.label ? labelToColor[rect.label] : color
         ctx.fill()
+        // 为选中的矩形框绘制红色圆点
+        drawResizeDot(rect)
       }
-      ctx.globalAlpha = 1
-
-      ctx.stroke()
     }
   }
+  // 为选中的矩形框绘制红色圆点
+  function drawResizeDot(rect) {
+    const dotRadius = 3
+    const dotColor = "#ff0000"
+    ctx.strokeStyle = dotColor
+    ctx.fillStyle = dotColor
+    ctx.globalAlpha = 1
 
+    // 绘制圆点(左上)
+    ctx.beginPath()
+    ctx.arc(rect.startX, rect.startY, dotRadius, 0, Math.PI * 2)
+    ctx.fill()
+    // 绘制圆点(中上)
+    ctx.beginPath()
+    ctx.arc(
+      (rect.startX + rect.endX) / 2,
+      rect.startY,
+      dotRadius,
+      0,
+      Math.PI * 2
+    )
+    ctx.fill()
+    // 绘制圆点(右上)
+    ctx.beginPath()
+    ctx.arc(rect.endX, rect.startY, dotRadius, 0, Math.PI * 2)
+    ctx.fill()
+    // 绘制圆点(左中)
+    ctx.beginPath()
+    ctx.arc(
+      rect.startX,
+      (rect.startY + rect.endY) / 2,
+      dotRadius,
+      0,
+      Math.PI * 2
+    )
+    ctx.fill()
+    // 绘制圆点(右中)
+    ctx.beginPath()
+    ctx.arc(rect.endX, (rect.startY + rect.endY) / 2, dotRadius, 0, Math.PI * 2)
+    ctx.fill()
+    // 绘制圆点(左下)
+    ctx.beginPath()
+    ctx.arc(rect.startX, rect.endY, dotRadius, 0, Math.PI * 2)
+    ctx.fill()
+    // 绘制圆点(中下)
+    ctx.beginPath()
+    ctx.arc((rect.startX + rect.endX) / 2, rect.endY, dotRadius, 0, Math.PI * 2)
+    ctx.fill()
+    // 绘制圆点(右下)
+    ctx.beginPath()
+    ctx.arc(rect.endX, rect.endY, dotRadius, 0, Math.PI * 2)
+    ctx.fill()
+  }
   // 删除所有矩形框，清空画布
   function clearCanvas() {
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
@@ -370,7 +643,7 @@ export default function Editor(props) {
       {/* 菜单 */}
       <div className="banner">
         {imgList.length !== 0 && (
-          <div className="menu-button" onClick={handleDelete}>
+          <div className="menu-button no-select" onClick={handleDelete}>
             <Tooltip title={"删除选中图片"}>
               <img src={DeleteIcon} alt="delete" />
             </Tooltip>
@@ -397,6 +670,7 @@ export default function Editor(props) {
             document.documentElement.clientHeight - 33 - 40 - 40
           )}
           ref={canvasRef}
+          style={{ cursor: cursor }}
         >
           Sorry, your browser does not support HTML5 Canvas functionality which
           is required for this application.
@@ -405,20 +679,24 @@ export default function Editor(props) {
       {/* 底部 */}
       <div className="footer">
         <div
-          className={`left-arrow ${selected === -1 ? "grey-arrow" : ""}`}
+          className={`no-select left-arrow ${
+            selected === -1 ? "grey-arrow" : ""
+          }`}
           onClick={go("prev")}
         >
           <Tooltip title={"上一张"}>
             <img src={LeftArrow} alt="previous" />
           </Tooltip>
         </div>
-        <div className="cur-img-name ellipsis">
+        <div className="no-select cur-img-name ellipsis">
           <Tooltip title={imageObj?.name ?? "-"}>
             {imageObj?.name ?? "-"}
           </Tooltip>
         </div>
         <div
-          className={`right-arrow ${selected === -1 ? "grey-arrow" : ""}`}
+          className={`no-select right-arrow ${
+            selected === -1 ? "grey-arrow" : ""
+          }`}
           onClick={go("next")}
         >
           <Tooltip title={"下一张"}>

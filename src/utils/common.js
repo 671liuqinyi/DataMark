@@ -39,13 +39,21 @@ function formatDate(timestamp) {
 }
 
 // 矩形类
-function Rect(startX, startY, endX, endY, color = "yellow", label = "") {
+function Rect(
+  startX,
+  startY,
+  endX,
+  endY,
+  color = "yellow",
+  label = "",
+  isSelected = true
+) {
   this.startX = startX
   this.startY = startY
   this.endX = endX
   this.endY = endY
   this.color = color
-  this.isSelected = false
+  this.isSelected = isSelected
   this.label = label
 }
 

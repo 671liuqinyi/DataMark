@@ -14,7 +14,7 @@ export default function ImgList(props) {
     return sum > 0
   }
   return (
-    <div className="left-container">
+    <div className="no-select left-container">
       {imgList.length === 0 ? (
         <div className="tip">请先通过菜单栏导入图片</div>
       ) : (

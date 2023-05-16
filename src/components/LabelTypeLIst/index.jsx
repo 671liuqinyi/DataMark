@@ -89,11 +89,11 @@ export default function LabelTypeLIst(props) {
                 }}
               ></div>
               {/* 标注框内的标签选择列表 */}
-              <div className="label-select">
+              <div className="no-select label-select">
                 <LabelSelect index={index} label={label} />
               </div>
               <div
-                className="delete-icon"
+                className="no-select delete-icon"
                 onClick={() => {
                   handleDelete(item, index)
                 }}
@@ -158,7 +158,7 @@ export default function LabelTypeLIst(props) {
       //   }
       //   // changeLabelType()
       // }}
-      className="right-container"
+      className="no-select right-container"
       activeKey={labelType}
     >
       <Panel header={LabelTypes[labelType].label} key={labelType}>

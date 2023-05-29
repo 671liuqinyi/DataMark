@@ -18,9 +18,11 @@ export default function Editor(props) {
     syncLabel,
     labelToColor,
     scaleObj,
+    labelArr,
     setSelected,
     setImgList,
     setSyncLabel,
+    setIsModalOpen,
   } = props
   const imageObj = imgList.filter((img) => img.id === selected)[0]
   // canvas元素
@@ -58,7 +60,7 @@ export default function Editor(props) {
       canvasRef.current.onmousemove = null
       canvasRef.current.onmouseup = null
     }
-  }, [ctx, selected, imgList, cursor])
+  }, [ctx, selected, imgList, cursor, labelArr])
 
   useEffect(() => {
     // 初始化图片缩放比例
@@ -100,6 +102,7 @@ export default function Editor(props) {
   let isDrawing = false
   let isDragging = false
   let isResizing = false
+  let resizingTag
 
   let currentRect = useRef()
   let rectIndex = useRef()
@@ -143,58 +146,156 @@ export default function Editor(props) {
   }
   // 调整标注框大小
   const resizeLabelFrame = (type) => {
+    const rect = currentRect.current
+    let x1, y1, x2, y2
+
     switch (type) {
       case "left-top": {
-        console.log(`currentRect`, currentRect.current)
-        let x1, y1, x2, y2
         x1 = endX
         y1 = endY
-        x2 = currentRect.current.endX
-        y2 = currentRect.current.endY
-        drawRects()
-        // 绘制新矩形框
-        ctx.beginPath()
-        ctx.moveTo(x1, y1)
-        ctx.lineTo(x2, y1)
-        ctx.lineTo(x2, y2)
-        ctx.lineTo(x1, y2)
-        ctx.lineTo(x1, y1)
-        ctx.strokeStyle = color
-        ctx.lineWidth = 3
-        ctx.stroke()
+        x2 = rect.endX
+        y2 = rect.endY
         break
       }
 
-      case "top":
-        console.log(`2`)
+      case "top": {
+        // 没有移动到另一侧
+        if (endY < rect.endY) {
+          x1 = rect.startX
+          y1 = endY
+          x2 = rect.endX
+          y2 = rect.endY
+        } else {
+          // 重新排列矩形框起始点和终点坐标
+          x1 = rect.startX
+          y1 = rect.endY
+          x2 = rect.endX
+          y2 = endY
+        }
         break
-      case "right-top":
-        console.log(`3`)
+      }
+
+      case "right-top": {
+        let xBias = endX - rect.endX // >0
+        let yBias = endY - rect.startY // <0
+
+        if (endX > rect.startX && endY < rect.endY) {
+          x1 = rect.startX
+          y1 = rect.startY + yBias
+          x2 = rect.endX + xBias
+          y2 = rect.endY
+        } else {
+          // 重新排列矩形框起始点和终点坐标
+          x1 = endX
+          y1 = rect.endY
+          x2 = rect.startX
+          y2 = endY
+        }
         break
-      case "left":
-        console.log(`4`)
+      }
+
+      case "left": {
+        // 没有移动到另一侧
+        if (endX < rect.endX) {
+          x1 = endX
+          y1 = rect.startY
+          x2 = rect.endX
+          y2 = rect.endY
+        } else {
+          // 重新排列矩形框起始点和终点坐标
+          x1 = rect.endX
+          y1 = rect.startY
+          x2 = endX
+          y2 = rect.endY
+        }
         break
-      case "right":
-        console.log(`5`)
+      }
+      case "right": {
+        // 没有移动到另一侧
+        if (endX > rect.startX) {
+          x1 = rect.startX
+          y1 = rect.startY
+          x2 = endX
+          y2 = rect.endY
+        } else {
+          // 重新排列矩形框起始点和终点坐标
+          x1 = endX
+          y1 = rect.startY
+          x2 = rect.startX
+          y2 = rect.endY
+        }
         break
-      case "left-bottom":
-        console.log(`6`)
+      }
+      case "left-bottom": {
+        // 没有移动到对角线另一侧
+        if (endX < rect.endX && endY > rect.startY) {
+          let xBias = endX - rect.startX
+          let yBias = endY - rect.endY
+          x1 = rect.startX + xBias
+          y1 = rect.startY
+          x2 = rect.endX
+          y2 = rect.endY + yBias
+        } else {
+          // 重新排列矩形框起始点和终点坐标
+          x1 = rect.endX
+          y1 = endY
+          x2 = endX
+          y2 = rect.startY
+        }
         break
-      case "bottom":
-        console.log(`7`)
+      }
+      case "bottom": {
+        // 没有移动到另一侧
+        if (endY > rect.startY) {
+          x1 = rect.startX
+          y1 = rect.startY
+          x2 = rect.endX
+          y2 = endY
+        } else {
+          // 重新排列矩形框起始点和终点坐标
+          x1 = rect.startX
+          y1 = endY
+          x2 = rect.endX
+          y2 = rect.startY
+        }
         break
-      case "right-bottom":
-        console.log(`8`)
+      }
+      case "right-bottom": {
+        x1 = rect.startX
+        y1 = rect.startY
+        x2 = endX
+        y2 = endY
         break
-      default:
-        break
+      }
     }
+    drawRects()
+    // 绘制新矩形框
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y1)
+    ctx.lineTo(x2, y2)
+    ctx.lineTo(x1, y2)
+    ctx.lineTo(x1, y1)
+    ctx.strokeStyle = color
+    ctx.lineWidth = 3
+    ctx.stroke()
   }
 
   function handleMousedown(e) {
+    // 标注类型为分类
+    if (labelType === "classification") {
+      return
+    }
     // 未导入图片时不能标注
-    if (selected === -1) return
-
+    if (selected === -1) {
+      return
+    }
+    // 需要先设置标签才能标注
+    if (labelArr.length === 0) {
+      message.info("需要先设置标签才能标注")
+      setIsModalOpen(true)
+      return
+    }
     startX = e.offsetX
     startY = e.offsetY
     // 正常情况
@@ -220,8 +321,7 @@ export default function Editor(props) {
     endX = e.offsetX
     endY = e.offsetY
     if (isResizing) {
-      console.log(`isResizing move`)
-      // 临时加一个rect，等到鼠标松开时替换掉原来的rect
+      // 调整标注框大小
       resizeLabelFrame(resizeTag.current)
     } else {
       // 改变canvas的cursor样式
@@ -338,25 +438,11 @@ export default function Editor(props) {
       }
     }
     if (isResizing) {
-      console.log(`isResizing end`)
       setImgList((imgList) => {
         const newImageList = imgList.map((imgObj) => {
           if (selected === imgObj.id) {
             // 修改rect状态
-            imgObj.labelObj[labelType].forEach((item) => {
-              if (item.isSelected === true) {
-                // 重新排列矩形框起始点和终点坐标
-                if (endX < item.endX && endY < item.endY) {
-                  item.startX = endX
-                  item.startY = endY
-                } else {
-                  item.startX = item.endX
-                  item.startY = item.endY
-                  item.endX = endX
-                  item.endY = endY
-                }
-              }
-            })
+            updateResizeFrame(imgObj.labelObj[labelType][rectIndex.current])
           }
           return imgObj
         })
@@ -373,6 +459,145 @@ export default function Editor(props) {
     isResizing = false
     widthBias = 0
     heightBias = 0
+  }
+
+  function updateResizeFrame(rect) {
+    let x1, x2, y1, y2
+    if (resizeTag.current == "left-top") {
+      if (endX < rect.endX && endY < rect.endY) {
+        rect.startX = endX
+        rect.startY = endY
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        rect.startX = rect.endX
+        rect.startY = rect.endY
+        rect.endX = endX
+        rect.endY = endY
+      }
+    } else if (resizeTag.current == "right-bottom") {
+      // 没有移动到对角线另一侧
+      if (endX > rect.startX && endY > rect.startY) {
+        rect.endX = endX
+        rect.endY = endY
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        // 注意这里赋值顺序“不能”调换
+        rect.endX = rect.startX
+        rect.endY = rect.startY
+        rect.startX = endX
+        rect.startY = endY
+      }
+    } else if (resizeTag.current == "right-top") {
+      // 没有移动到对角线另一侧
+      if (endX > rect.startX && endY < rect.endY) {
+        let xBias = endX - rect.endX // >0
+        let yBias = endY - rect.startY // <0
+        rect.startY += yBias
+        rect.endX += xBias
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        x1 = endX
+        y1 = rect.endY
+        x2 = rect.startX
+        y2 = endY
+        rect.startX = x1
+        rect.startY = y1
+        rect.endX = x2
+        rect.endY = y2
+      }
+    } else if (resizeTag.current == "left-bottom") {
+      // 没有移动到对角线另一侧
+      if (endX < rect.endX && endY > rect.startY) {
+        let xBias = endX - rect.startX
+        let yBias = endY - rect.endY
+        x1 = rect.startX + xBias
+        y1 = rect.startY
+        x2 = rect.endX
+        y2 = rect.endY + yBias
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        x1 = rect.endX
+        y1 = endY
+        x2 = endX
+        y2 = rect.startY
+      }
+      rect.startX = x1
+      rect.startY = y1
+      rect.endX = x2
+      rect.endY = y2
+    } else if (resizeTag.current == "left") {
+      // 没有移动到另一侧
+      if (endX < rect.endX) {
+        x1 = endX
+        y1 = rect.startY
+        x2 = rect.endX
+        y2 = rect.endY
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        x1 = rect.endX
+        y1 = rect.startY
+        x2 = endX
+        y2 = rect.endY
+      }
+      rect.startX = x1
+      rect.startY = y1
+      rect.endX = x2
+      rect.endY = y2
+    } else if (resizeTag.current == "right") {
+      // 没有移动到另一侧
+      if (endX > rect.startX) {
+        x1 = rect.startX
+        y1 = rect.startY
+        x2 = endX
+        y2 = rect.endY
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        x1 = endX
+        y1 = rect.startY
+        x2 = rect.startX
+        y2 = rect.endY
+      }
+      rect.startX = x1
+      rect.startY = y1
+      rect.endX = x2
+      rect.endY = y2
+    } else if (resizeTag.current == "top") {
+      // 没有移动到另一侧
+      if (endY < rect.endY) {
+        x1 = rect.startX
+        y1 = endY
+        x2 = rect.endX
+        y2 = rect.endY
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        x1 = rect.startX
+        y1 = rect.endY
+        x2 = rect.endX
+        y2 = endY
+      }
+      rect.startX = x1
+      rect.startY = y1
+      rect.endX = x2
+      rect.endY = y2
+    } else if (resizeTag.current == "bottom") {
+      // 没有移动到另一侧
+      if (endY > rect.startY) {
+        x1 = rect.startX
+        y1 = rect.startY
+        x2 = rect.endX
+        y2 = endY
+      } else {
+        // 重新排列矩形框起始点和终点坐标
+        x1 = rect.startX
+        y1 = endY
+        x2 = rect.endX
+        y2 = rect.startY
+      }
+      rect.startX = x1
+      rect.startY = y1
+      rect.endX = x2
+      rect.endY = y2
+    }
   }
 
   // 改变canvas的cursor样式

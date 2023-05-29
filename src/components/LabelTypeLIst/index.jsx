@@ -5,7 +5,7 @@ import React, { useState } from "react"
 import { Collapse, List, Dropdown, message, Space } from "antd"
 const { Panel } = Collapse
 import DeleteIcon from "../../assets/trash.png"
-
+import CheckTag from "./checkTag"
 import "./index.scss"
 
 const LabelTypes = {
@@ -45,7 +45,8 @@ export default function LabelTypeLIst(props) {
     // line: [],
   }
 
-  console.log(`labelObj`, labelObj)
+  // console.log(`labelObj`, labelObj)
+  // console.log(`!labelArr`, labelArr)
 
   const listData = labelObj[labelType].map((type) => {
     return {
@@ -79,7 +80,11 @@ export default function LabelTypeLIst(props) {
         // console.log(`RGB`, label, label ? COLORS[index] : "rgb(255, 255, 255)")
         return (
           <List.Item>
-            <div className="label-box">
+            <div
+              className={`label-box ${
+                item.type.isSelected ? "box-selected" : ""
+              }`}
+            >
               <div
                 className="color-select"
                 style={{
@@ -139,6 +144,7 @@ export default function LabelTypeLIst(props) {
             if (labelArr.length !== 0) return
             setIsModalOpen(true)
           }}
+          // className="select-scroll"
         >
           {!label ? "选择标签" : label}
         </Space>
@@ -162,10 +168,22 @@ export default function LabelTypeLIst(props) {
       activeKey={labelType}
     >
       <Panel header={LabelTypes[labelType].label} key={labelType}>
-        {labelObj[labelType].length === 0 ? (
-          "当前类型还没有标注框"
+        {labelArr.length === 0 ? (
+          "您的标签列表为空"
+        ) : labelType === "rect" ? (
+          labelObj[labelType].length === 0 ? (
+            "您尚未进行标注"
+          ) : (
+            <LabelList />
+          )
         ) : (
-          <LabelList />
+          <CheckTag
+            labelArr={labelArr}
+            imgList={imgList}
+            setImgList={setImgList}
+            selected={selected}
+            selectedImg={imageObj}
+          />
         )}
       </Panel>
     </Collapse>

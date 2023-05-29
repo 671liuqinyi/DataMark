@@ -176,9 +176,11 @@ const Dashboard = () => {
               syncLabel={syncLabel}
               labelToColor={labelToColor}
               scaleObj={scaleObj}
+              labelArr={labelArr}
               setSelected={setSelected}
               setImgList={setImgList}
               setSyncLabel={setSyncLabel}
+              setIsModalOpen={setIsModalOpen}
             />
           </Content>
           {/* 右侧标注框列表 */}

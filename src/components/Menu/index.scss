@@ -1,12 +1,12 @@
 .modal-container {
-  box-sizing: content-box;
-  height: 140px;
+  height: 200px;
   display: flex;
-  justify-content: space-between;
   gap: 10px;
 }
 
 .modal-card {
+  flex: 1;
+  height: 200px;
   text-align: center;
 }
 

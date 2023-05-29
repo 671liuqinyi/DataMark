@@ -3,6 +3,20 @@
   height: calc(100vh - 33px);
   width: 100%;
   background-color: #262c2f;
+  overflow: auto;
+
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    /* 设置滚动条的宽度 */
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    /* 设置滚动条拖动块的颜色 */
+    background-color: #877e7e;
+    /* 设置圆角边框半径 */
+    border-radius: 1rem;
+  }
 
   // 将panel的标题文字改成白色
   .ant-collapse-header {
@@ -23,7 +37,7 @@
     display: flex;
     width: 280px;
     height: 40px;
-    background-color: #202020;
+    background-color: #262c2f;
     color: #fff;
     align-items: center;
 
@@ -60,6 +74,10 @@
     }
   }
 
+  .box-selected {
+    background-color: #202020;
+  }
+
   // 清除列表项的padding,调整间距
   .ant-list-item {
     padding: 0;
@@ -67,5 +85,76 @@
     &:nth-child(n+2) {
       margin-top: 3px;
     }
+  }
+}
+
+// 图片分类，选择框
+.tagLabelsListContent {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: flex-start;
+
+  .tagItem {
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding: 5px 20px;
+    border-radius: 3px;
+    background-color: #0003;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+    color: #fff;
+    word-wrap: break-word;
+    max-width: 276px;
+
+    &:hover {
+      background-color: #171a1c;
+    }
+  }
+
+  .tagItem.active {
+    background-color: #009efd;
+  }
+
+  .ImageButton {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    margin: 0 0 10px;
+    border-radius: 3px;
+    background-color: #0003;
+    transition: background-color .7s ease;
+    cursor: pointer;
+
+    img {
+      filter: brightness(0) invert(1);
+      user-select: none;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.ant-dropdown {
+  overflow-y: auto;
+  max-height: 390px;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    /* 宽度为0 */
+    height: 0;
+    /* 高度为0 */
+    background-color: transparent;
+    /* 背景颜色透明 */
   }
 }

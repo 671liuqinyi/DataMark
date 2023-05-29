@@ -48,7 +48,7 @@ const TaskModal = ({ visible, setVisible, labelType, setLabelType }) => {
       onCancel={onCancel}
       footer={[
         <Button key="ok" onClick={onCancel}>
-          确认
+          关闭
         </Button>,
       ]}
     >
@@ -65,12 +65,12 @@ const TaskModal = ({ visible, setVisible, labelType, setLabelType }) => {
           onClick={onDetect}
           isSelected={labelType === "rect"}
         />
-        <DetectionCard
+        {/* <DetectionCard
           title="图像/实例分割"
           imageSrc={Segmentation}
           onClick={onSegment}
           isSelected={labelType === "polygon"}
-        />
+        /> */}
       </div>
     </Modal>
   )

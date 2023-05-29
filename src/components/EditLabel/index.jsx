@@ -3,10 +3,11 @@
  * 在页面中可以对标签类型进行管理
  */
 import React, { useState } from "react"
-import { Modal, Divider, Button, Progress } from "antd"
+import { Modal, Divider, Button, Progress, message } from "antd"
 import MyTag from "./MyTag"
 import AILabelSelect from "./AILabelSelect"
 import { Rect, classToType } from "../../utils"
+import { labelList } from "../../utils/constant"
 import "./index.scss"
 
 const EditLabel = (props) => {
@@ -21,6 +22,7 @@ const EditLabel = (props) => {
     setImgList,
     setSyncLabel,
     scaleObj,
+    setIsAIAssist,
   } = props
   // 是否正在处理ai标注
   const [isProgress, setIsProgress] = useState(false)
@@ -38,69 +40,122 @@ const EditLabel = (props) => {
   }
   // 将ai返回数据填充到原来的数据结构
   const writeBack = (data) => {
-    console.log(`!ai-progress-data`, data)
-    // console.log(`!imgList`, imgList)
-    // console.log(`!checkedList`, checkedList)
+    if (data.length === 0) {
+      return
+    }
 
-    // 修改labelArr，生成label->color映射
-    setLabelArr([...checkedList])
-
-    // 设置imglist
-    setImgList((imgList) => {
-      const newImageList = imgList.map((imgObj, index) => {
-        // 在state中更新标注框
-        const processedList = data[index]
-        processedList.forEach((frame) => {
-          if (labelType === "rect") {
-            const [boxClass, x_center, y_center, width, height] = frame
-              .split(" ")
-              .map((str) => Number(str))
-            // console.log(`!frame.split`, frame.split(" "))
-
-            // 数据格式转换（yolo -> 前端 ）
-            const {
-              x: scaleX,
-              y: scaleY,
-              width: imgWidth,
-              height: imgHeight,
-            } = scaleObj.current[imgObj.id]
-            const startX = Math.round(
-              (imgWidth * (x_center - 0.5 * width)) / scaleX
-            )
-            const startY = Math.round(
-              (imgHeight * (y_center - 0.5 * height)) / scaleY
-            )
-            const endX = Math.round(startX + (imgWidth * width) / scaleX)
-            const endY = Math.round(startY + (imgHeight * height) / scaleY)
-            const color = "yellow"
-            // 将coco数字类别转换为英文label,只有找到了对应的类型才会新建标注框
-            const typeObj = classToType(boxClass)
-            if (checkedList.includes(typeObj.translation)) {
-              const newRect = new Rect(
-                startX,
-                startY,
-                endX,
-                endY,
-                color,
-                typeObj.label
-              )
-              console.log(`newRect`, newRect)
-              imgObj.labelObj["rect"].push(newRect)
-            }
-          }
-        })
-        return imgObj
+    // 根据标注任务类型处理返回数据
+    if (labelType === "rect") {
+      // 中文->英文转化
+      const labelArr = []
+      checkedList.forEach((text) => {
+        const temp = labelList.find((labelObj) => labelObj.translation === text)
+        labelArr.push(temp.label)
       })
-      console.log(`newImageList`, newImageList)
-      return newImageList
-    })
-    // 同步页面数据,展示矩形
-    setSyncLabel((pre) => pre + 1)
+      // 修改labelArr，生成label->color映射
+      setLabelArr([...labelArr])
+      // console.log(`!ai-rect-data`, data)
+      // console.log(`!imgList`, imgList)
+      // 设置imglist
+      setImgList((imgList) => {
+        const newImageList = imgList.map((imgObj) => {
+          // 在state中更新标注框
+          const oldFilename = imgObj.id.split(".")[0]
+          // 图片处理后未检测到物体
+          if (
+            !Object.keys(data)
+              .map((item) => item.split(".")[0])
+              .includes(oldFilename)
+          ) {
+            return imgObj
+          }
+          const processedList = data[oldFilename + ".txt"]
+          processedList.forEach((frame) => {
+            if (labelType === "rect") {
+              const [boxClass, x_center, y_center, width, height] = frame
+                .split(" ")
+                .map((str) => Number(str))
+              // console.log(`!frame.split`, frame.split(" "))
+
+              // 数据格式转换（yolo -> 前端 ）
+              const {
+                x: scaleX,
+                y: scaleY,
+                width: imgWidth,
+                height: imgHeight,
+              } = scaleObj.current[imgObj.id]
+              const startX = Math.round(
+                (imgWidth * (x_center - 0.5 * width)) / scaleX
+              )
+              const startY = Math.round(
+                (imgHeight * (y_center - 0.5 * height)) / scaleY
+              )
+              const endX = Math.round(startX + (imgWidth * width) / scaleX)
+              const endY = Math.round(startY + (imgHeight * height) / scaleY)
+              const color = "yellow"
+              // 将coco数字类别转换为英文label,只有找到了对应的类型才会新建标注框
+              const typeObj = classToType(boxClass)
+              if (checkedList.includes(typeObj.translation)) {
+                const newRect = new Rect(
+                  startX,
+                  startY,
+                  endX,
+                  endY,
+                  color,
+                  typeObj.label
+                )
+                imgObj.labelObj["rect"].push(newRect)
+              }
+            }
+          })
+          return imgObj
+        })
+        return newImageList
+      })
+      // 同步页面数据,展示矩形
+      setSyncLabel((pre) => pre + 1)
+    } else if (labelType === "classification") {
+      // todo: 同步数据，右侧显示
+      console.log(`!ai-classification-data`, data)
+      let labels = []
+      Object.values(data).map((item) => {
+        const label = item.slice(5)
+        if (!labels.includes(label)) {
+          labels.push(label)
+        }
+      })
+      setLabelArr([...labels])
+      setImgList((imgList) => {
+        const newImageList = imgList.map((imgObj) => {
+          // 在state中更新标注框
+          const oldFilename = imgObj.id.split(".")[0]
+          // 图片处理后未检测到物体
+          if (
+            !Object.keys(data)
+              .map((item) => item.split(".")[0])
+              .includes(oldFilename)
+          ) {
+            return imgObj
+          }
+          const returnLabel = data[oldFilename + ".txt"].slice(5)
+          if (!imgObj.labelObj["classification"].includes(returnLabel)) {
+            imgObj.labelObj["classification"].push(returnLabel)
+          }
+          return imgObj
+        })
+        return newImageList
+      })
+    }
   }
   // 父modal的ai标注处理函数
   const handleAIOk = async () => {
     // 第一次点击只修改样式，不关闭弹窗
     if (!isProgress) {
+      // 未选择标签时
+      if (checkedList.length === 0 && labelType === "rect") {
+        message.warning("请先选择标签")
+        return
+      }
       setIsProgress(true)
       // 清空ai选择标签列表
       setCheckedList([])
@@ -123,11 +178,15 @@ const EditLabel = (props) => {
             }
           })
         }, 500)
-        let response = await fetch("http://127.0.0.1:5000/upload", {
-          method: "POST",
-          body: formData,
-        })
+        let response = await fetch(
+          `http://127.0.0.1:5000/upload?type=${labelType}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        )
         let data = await response.json()
+        // console.log(`!data`, data)
         // 将数据填充到原来的数据结构
         writeBack(data.processed_data)
         setPercent(100)
@@ -143,6 +202,7 @@ const EditLabel = (props) => {
       setPercent(0)
       setIsModalOpen(false)
       setIsProgress(false)
+      setIsAIAssist(false)
     }
   }
   return (
@@ -193,10 +253,15 @@ const EditLabel = (props) => {
           ) : (
             <div className="label-list">
               {isAIAssist ? (
-                <AILabelSelect
-                  checkedList={checkedList}
-                  setCheckedList={setCheckedList}
-                />
+                labelType === "rect" ? (
+                  <AILabelSelect
+                    checkedList={checkedList}
+                    setCheckedList={setCheckedList}
+                  />
+                ) : (
+                  // 立即执行分类任务
+                  <div>分类任务无需提前选定种类！</div>
+                )
               ) : (
                 <MyTag labelArr={labelArr} setLabelArr={setLabelArr} />
               )}

@@ -18,10 +18,10 @@ const items = [
         key: "1-1",
         label: "导入图片",
       },
-      {
+      /*       {
         key: "1-2",
         label: "导入已有数据",
-      },
+      }, */
     ],
   },
   {
@@ -53,16 +53,16 @@ const items = [
   {
     key: "4",
     type: "group",
-    label: "导出数据",
+    label: "导出",
     children: [
       {
         key: "4-1",
-        label: "json格式",
+        label: "导出标注数据",
       },
-      {
-        key: "4-2",
-        label: "标注数据保存",
-      },
+      // {
+      //   key: "4-2",
+      //   label: "标注数据保存",
+      // },
     ],
   },
 ]
@@ -109,7 +109,7 @@ const Menu = (props) => {
           // 每张图片的label信息
           labelObj: {
             rect: [],
-            polygon: [],
+            // polygon: [],
             classification: [],
             // line: [],
           },
@@ -134,29 +134,39 @@ const Menu = (props) => {
   const download = () => {
     console.log(`scaleObj`, scaleObj.current)
     const img_annotations = {}
-    imgList.forEach((img) => {
-      let temp = {}
-      temp.filename = img.name
-      temp.regions = img.labelObj["rect"].map((rect) => {
-        return {
-          shape_attributes: {
-            name: "rect",
-            x: Math.round(rect.startX * scaleObj.current[img.id].x),
-            y: Math.round(rect.startY * scaleObj.current[img.id].y),
-            width: Math.round(
-              (rect.endX - rect.startX) * scaleObj.current[img.id].x
-            ),
-            height: Math.round(
-              (rect.endY - rect.startY) * scaleObj.current[img.id].y
-            ),
-          },
-          region_attributes: {
-            type: rect.label,
-          },
-        }
+    if (labelType === "rect") {
+      imgList.forEach((img) => {
+        let temp = {}
+        temp.filename = img.name
+        temp.regions = img.labelObj["rect"].map((rect) => {
+          return {
+            shape_attributes: {
+              name: "rect",
+              x: Math.round(rect.startX * scaleObj.current[img.id].x),
+              y: Math.round(rect.startY * scaleObj.current[img.id].y),
+              width: Math.round(
+                (rect.endX - rect.startX) * scaleObj.current[img.id].x
+              ),
+              height: Math.round(
+                (rect.endY - rect.startY) * scaleObj.current[img.id].y
+              ),
+            },
+            region_attributes: {
+              type: rect.label,
+            },
+          }
+        })
+        img_annotations[img.name] = temp
       })
-      img_annotations[img.name] = temp
-    })
+    } else if (labelType === "classification") {
+      imgList.forEach((img) => {
+        let temp = {}
+        temp.filename = img.name
+        temp.regions = img.labelObj["classification"]
+        img_annotations[img.name] = temp
+      })
+    }
+
     console.log(`img_annotations`, img_annotations)
     // return
     // 生成要下载的 JSON 数据
@@ -204,15 +214,14 @@ const Menu = (props) => {
 
   // 3-1 AI辅助标注
   const startAIAssist = () => {
-    console.log(`imgList`, imgList)
     if (imgList.length === 0) {
       message.warning("请先导入图片！")
       return
     }
-    if (labelType !== "rect") {
-      message.warning("当前任务不支持AI标注！")
-      return
-    }
+    // if (!["rect", "classification"].includes(labelType)) {
+    //   message.warning("当前任务不支持AI标注！")
+    //   return
+    // }
     setIsAIAssist(true)
     setIsModalOpen(true)
   }
@@ -284,6 +293,7 @@ const Menu = (props) => {
         setImgList={setImgList}
         setSyncLabel={setSyncLabel}
         scaleObj={scaleObj}
+        setIsAIAssist={setIsAIAssist}
       />
       {/* 选择标注任务类别 */}
       <TaskModal
